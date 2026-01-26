@@ -1,0 +1,6 @@
+@AlgreenMES.API_HostAddress = http://localhost:5030
+
+GET {{AlgreenMES.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
