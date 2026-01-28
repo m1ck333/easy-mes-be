@@ -8,6 +8,15 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\src\BuildingBlocks\AlGreenMES.BuildingBlocks.EventBus\AlGreenMES.BuildingBlocks.EventBus.csproj" />
+        <ProjectReference Include="..\src\Modules\Tenancy\AlGreenMES.Modules.Tenancy.Api\AlGreenMES.Modules.Tenancy.Api.csproj" />
+        <ProjectReference Include="..\src\Modules\Identity\AlGreenMES.Modules.Identity.Api\AlGreenMES.Modules.Identity.Api.csproj" />
+        <ProjectReference Include="..\src\Modules\Production\AlGreenMES.Modules.Production.Api\AlGreenMES.Modules.Production.Api.csproj" />
+        <ProjectReference Include="..\src\Modules\Orders\AlGreenMES.Modules.Orders.Api\AlGreenMES.Modules.Orders.Api.csproj" />
     </ItemGroup>
 
 </Project>

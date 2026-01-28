@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AlGreenMES.Modules.Orders.Domain\AlGreenMES.Modules.Orders.Domain.csproj" />
+    <ProjectReference Include="..\AlGreenMES.Modules.Orders.Application\AlGreenMES.Modules.Orders.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\AlGreenMES.BuildingBlocks.Common\AlGreenMES.BuildingBlocks.Common.csproj" />
+  </ItemGroup>
+
+</Project>
