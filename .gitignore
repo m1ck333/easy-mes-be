@@ -25,6 +25,9 @@ bld/
 .idea/
 *.sln.iml
 
+# Claude Code
+.claude/
+
 # NuGet
 *.nupkg
 *.snupkg
