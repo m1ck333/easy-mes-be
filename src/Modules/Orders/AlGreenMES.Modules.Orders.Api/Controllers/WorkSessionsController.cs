@@ -23,7 +23,7 @@ public class WorkSessionsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetWorkSessions(
         [FromQuery] Guid tenantId,
-        [FromQuery] DateTime date,
+        [FromQuery] DateOnly date,
         [FromQuery] Guid? userId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,

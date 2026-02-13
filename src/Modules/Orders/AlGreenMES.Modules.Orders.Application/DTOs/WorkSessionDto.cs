@@ -7,5 +7,5 @@ public record WorkSessionDto(
     DateTime CheckInTime,
     DateTime? CheckOutTime,
     int? DurationMinutes,
-    DateTime Date,
+    DateOnly Date,
     bool IsActive);

@@ -10,7 +10,7 @@ public class WorkSession : TenantEntity
     public DateTime CheckInTime { get; private set; }
     public DateTime? CheckOutTime { get; private set; }
     public int? DurationMinutes { get; private set; }
-    public DateTime Date { get; private set; }
+    public DateOnly Date { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
     public bool IsActive => !CheckOutTime.HasValue;
@@ -27,7 +27,7 @@ public class WorkSession : TenantEntity
             ProcessId = processId,
             UserId = userId,
             CheckInTime = DateTime.UtcNow,
-            Date = DateTime.UtcNow.Date
+            Date = DateOnly.FromDateTime(DateTime.UtcNow)
         };
     }
 
