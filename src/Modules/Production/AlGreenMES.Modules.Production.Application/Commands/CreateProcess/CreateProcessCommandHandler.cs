@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Production.Application.DTOs;
 using AlGreenMES.Modules.Production.Application.Interfaces;
 using AlGreenMES.Modules.Production.Domain.Entities;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Commands.CreateProcess;
@@ -29,6 +30,6 @@ public class CreateProcessCommandHandler : IRequestHandler<CreateProcessCommand,
         await _processRepository.AddAsync(process, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ProcessDto(process.Id, process.TenantId, process.Code, process.Name, process.SequenceOrder, process.IsActive, new List<SubProcessDto>());
+        return process.Adapt<ProcessDto>();
     }
 }

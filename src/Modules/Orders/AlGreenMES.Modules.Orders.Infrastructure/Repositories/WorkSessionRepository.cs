@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
 using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
@@ -45,5 +46,17 @@ public class WorkSessionRepository : IWorkSessionRepository
     public async Task AddAsync(WorkSession session, CancellationToken cancellationToken = default)
     {
         await _dbContext.WorkSessions.AddAsync(session, cancellationToken);
+    }
+
+    public async Task<PagedResult<WorkSession>> GetPagedAsync(Guid tenantId, DateTime date, Guid? userId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.WorkSessions.Where(ws => ws.TenantId == tenantId && ws.Date == date.Date);
+
+        if (userId.HasValue)
+            query = query.Where(ws => ws.UserId == userId.Value);
+
+        query = query.OrderBy(ws => ws.CheckInTime);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

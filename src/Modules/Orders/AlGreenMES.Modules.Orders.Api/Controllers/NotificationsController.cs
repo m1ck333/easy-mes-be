@@ -21,9 +21,22 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetNotifications([FromQuery] Guid userId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetNotifications(
+        [FromQuery] Guid userId,
+        [FromQuery] bool? isRead,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetNotificationsQuery(userId), cancellationToken);
+        var result = await _mediator.Send(new GetNotificationsQuery
+        {
+            UserId = userId,
+            IsRead = isRead,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
         return Ok(result);
     }
 

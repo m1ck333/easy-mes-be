@@ -20,7 +20,7 @@ public class MarkNotificationReadCommandHandler : IRequestHandler<MarkNotificati
     {
         var notification = await _notificationRepository.GetByIdAsync(request.Id, cancellationToken);
         if (notification == null)
-            throw new DomainException("NOTIFICATION_NOT_FOUND", $"Notification with id '{request.Id}' was not found.");
+            throw new NotFoundException("Notification", request.Id);
 
         notification.MarkRead();
         await _unitOfWork.SaveChangesAsync(cancellationToken);

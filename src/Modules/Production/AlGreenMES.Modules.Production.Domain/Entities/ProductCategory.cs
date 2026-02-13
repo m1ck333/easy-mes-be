@@ -56,7 +56,7 @@ public class ProductCategory : AuditableEntity
     public void RemoveProcess(Guid processId)
     {
         var process = _processes.FirstOrDefault(p => p.ProcessId == processId)
-            ?? throw new DomainException("PROCESS_NOT_FOUND", "Process not in this category.");
+            ?? throw new NotFoundException("Process not in this category.");
 
         _dependencies.RemoveAll(d => d.ProcessId == processId || d.DependsOnProcessId == processId);
         _processes.Remove(process);
@@ -81,7 +81,7 @@ public class ProductCategory : AuditableEntity
     public void RemoveDependency(Guid dependencyId)
     {
         var dep = _dependencies.FirstOrDefault(d => d.Id == dependencyId)
-            ?? throw new DomainException("DEPENDENCY_NOT_FOUND", "Dependency not found.");
+            ?? throw new NotFoundException("Dependency not found.");
 
         _dependencies.Remove(dep);
     }

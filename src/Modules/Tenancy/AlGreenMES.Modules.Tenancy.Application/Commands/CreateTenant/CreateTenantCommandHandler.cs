@@ -3,6 +3,7 @@ using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using AlGreenMES.Modules.Tenancy.Application.DTOs;
 using AlGreenMES.Modules.Tenancy.Domain.Entities;
 using AlGreenMES.Modules.Tenancy.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Tenancy.Application.Commands.CreateTenant;
@@ -29,12 +30,6 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, T
         await _tenantRepository.AddAsync(tenant, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new TenantDto(
-            tenant.Id,
-            tenant.Name,
-            tenant.Code,
-            tenant.IsActive,
-            tenant.CreatedAt,
-            tenant.UpdatedAt);
+        return tenant.Adapt<TenantDto>();
     }
 }

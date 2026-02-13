@@ -2,6 +2,7 @@ using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.RejectChangeRequest;
@@ -21,21 +22,11 @@ public class RejectChangeRequestCommandHandler : IRequestHandler<RejectChangeReq
     {
         var changeRequest = await _changeRequestRepository.GetByIdAsync(request.Id, cancellationToken);
         if (changeRequest == null)
-            throw new DomainException("CHANGE_REQUEST_NOT_FOUND", $"Change request with id '{request.Id}' was not found.");
+            throw new NotFoundException("ChangeRequest", request.Id);
 
         changeRequest.Reject(request.HandledByUserId, request.ResponseNote);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ChangeRequestDto(
-            changeRequest.Id,
-            changeRequest.OrderId,
-            changeRequest.RequestedByUserId,
-            changeRequest.RequestType,
-            changeRequest.Description,
-            changeRequest.Status,
-            changeRequest.CreatedAt,
-            changeRequest.HandledByUserId,
-            changeRequest.HandledAt,
-            changeRequest.ResponseNote);
+        return changeRequest.Adapt<ChangeRequestDto>();
     }
 }

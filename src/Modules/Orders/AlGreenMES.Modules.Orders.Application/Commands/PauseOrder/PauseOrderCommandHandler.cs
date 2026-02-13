@@ -19,7 +19,7 @@ public class PauseOrderCommandHandler : IRequestHandler<PauseOrderCommand, Unit>
     public async Task<Unit> Handle(PauseOrderCommand request, CancellationToken cancellationToken)
     {
         var order = await _orderRepository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new DomainException("ORDER_NOT_FOUND", $"Order with id '{request.Id}' was not found.");
+            ?? throw new NotFoundException("Order", request.Id);
 
         order.Pause();
         await _unitOfWork.SaveChangesAsync(cancellationToken);

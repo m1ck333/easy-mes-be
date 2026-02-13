@@ -9,6 +9,8 @@ using AlGreenMES.Modules.Orders.Api.Hubs;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Production.Api;
 using AlGreenMES.Modules.Tenancy.Api;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -83,6 +85,10 @@ public class Program
         builder.Services.AddIdentityModule(builder.Configuration);
         builder.Services.AddProductionModule(builder.Configuration);
         builder.Services.AddOrdersModule(builder.Configuration);
+
+        // Mapster
+        builder.Services.AddSingleton(TypeAdapterConfig.GlobalSettings);
+        builder.Services.AddScoped<IMapper, ServiceMapper>();
 
         // CORS
         builder.Services.AddCors(options =>

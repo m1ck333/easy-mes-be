@@ -2,6 +2,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CreateChangeRequest;
@@ -29,16 +30,6 @@ public class CreateChangeRequestCommandHandler : IRequestHandler<CreateChangeReq
         await _changeRequestRepository.AddAsync(changeRequest, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ChangeRequestDto(
-            changeRequest.Id,
-            changeRequest.OrderId,
-            changeRequest.RequestedByUserId,
-            changeRequest.RequestType,
-            changeRequest.Description,
-            changeRequest.Status,
-            changeRequest.CreatedAt,
-            changeRequest.HandledByUserId,
-            changeRequest.HandledAt,
-            changeRequest.ResponseNote);
+        return changeRequest.Adapt<ChangeRequestDto>();
     }
 }

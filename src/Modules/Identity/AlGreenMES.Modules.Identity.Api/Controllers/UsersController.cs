@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Identity.Application.Commands.CreateUser;
 using AlGreenMES.Modules.Identity.Application.Commands.UpdateUser;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUserById;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUsers;
+using AlGreenMES.Modules.Identity.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,9 +25,24 @@ public class UsersController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin,Manager")]
-    public async Task<IActionResult> GetUsers([FromQuery] Guid tenantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] Guid tenantId,
+        [FromQuery] UserRole? role,
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetUsersQuery(tenantId), cancellationToken);
+        var result = await _mediator.Send(new GetUsersQuery
+        {
+            TenantId = tenantId,
+            Role = role,
+            IsActive = isActive,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
         return Ok(result);
     }
 
@@ -34,9 +50,6 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetUserById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetUserByIdQuery(id), cancellationToken);
-        if (result is null)
-            return NotFound();
-
         return Ok(result);
     }
 

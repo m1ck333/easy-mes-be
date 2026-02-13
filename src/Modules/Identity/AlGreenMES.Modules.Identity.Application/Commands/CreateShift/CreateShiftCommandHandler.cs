@@ -2,6 +2,7 @@ using AlGreenMES.Modules.Identity.Application.DTOs;
 using AlGreenMES.Modules.Identity.Application.Interfaces;
 using AlGreenMES.Modules.Identity.Domain.Entities;
 using AlGreenMES.Modules.Identity.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Identity.Application.Commands.CreateShift;
@@ -28,12 +29,6 @@ public class CreateShiftCommandHandler : IRequestHandler<CreateShiftCommand, Shi
         await _shiftRepository.AddAsync(shift, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ShiftDto(
-            shift.Id,
-            shift.TenantId,
-            shift.Name,
-            shift.StartTime,
-            shift.EndTime,
-            shift.IsActive);
+        return shift.Adapt<ShiftDto>();
     }
 }

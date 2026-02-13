@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetNotifications;
 
-public class GetNotificationsQueryHandler : IRequestHandler<GetNotificationsQuery, IReadOnlyList<NotificationDto>>
+public class GetNotificationsQueryHandler : IRequestHandler<GetNotificationsQuery, PagedResult<NotificationDto>>
 {
     private readonly INotificationRepository _notificationRepository;
 
@@ -13,19 +15,12 @@ public class GetNotificationsQueryHandler : IRequestHandler<GetNotificationsQuer
         _notificationRepository = notificationRepository;
     }
 
-    public async Task<IReadOnlyList<NotificationDto>> Handle(GetNotificationsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<NotificationDto>> Handle(GetNotificationsQuery request, CancellationToken cancellationToken)
     {
-        var notifications = await _notificationRepository.GetByUserIdAsync(request.UserId, cancellationToken);
+        var result = await _notificationRepository.GetPagedAsync(
+            request.UserId, request.IsRead, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return notifications.Select(n => new NotificationDto(
-            n.Id,
-            n.UserId,
-            n.Type,
-            n.Title,
-            n.Message,
-            n.ReferenceType,
-            n.ReferenceId,
-            n.IsRead,
-            n.CreatedAt)).ToList();
+        return result.MapItems(n => n.Adapt<NotificationDto>());
     }
 }

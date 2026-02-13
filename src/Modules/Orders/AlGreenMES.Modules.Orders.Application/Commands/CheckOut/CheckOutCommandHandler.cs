@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CheckOut;
@@ -32,14 +33,6 @@ public class CheckOutCommandHandler : IRequestHandler<CheckOutCommand, WorkSessi
         await _eventService.NotifyWorkerCheckedOutAsync(
             new WorkerCheckedOutEvent(session.UserId, session.ProcessId, session.Id, session.DurationMinutes, session.TenantId), cancellationToken);
 
-        return new WorkSessionDto(
-            session.Id,
-            session.ProcessId,
-            session.UserId,
-            session.CheckInTime,
-            session.CheckOutTime,
-            session.DurationMinutes,
-            session.Date,
-            session.IsActive);
+        return session.Adapt<WorkSessionDto>();
     }
 }

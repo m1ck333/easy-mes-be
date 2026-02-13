@@ -1,6 +1,11 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
-using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetWorkSessions;
 
-public record GetWorkSessionsQuery(Guid TenantId, DateTime Date) : IRequest<IReadOnlyList<WorkSessionDto>>;
+public record GetWorkSessionsQuery : PagedQuery<PagedResult<WorkSessionDto>>
+{
+    public Guid TenantId { get; init; }
+    public DateTime Date { get; init; }
+    public Guid? UserId { get; init; }
+}

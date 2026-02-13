@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetBlockRequests;
 
-public class GetBlockRequestsQueryHandler : IRequestHandler<GetBlockRequestsQuery, IReadOnlyList<BlockRequestDto>>
+public class GetBlockRequestsQueryHandler : IRequestHandler<GetBlockRequestsQuery, PagedResult<BlockRequestDto>>
 {
     private readonly IBlockRequestRepository _blockRequestRepository;
 
@@ -13,21 +15,12 @@ public class GetBlockRequestsQueryHandler : IRequestHandler<GetBlockRequestsQuer
         _blockRequestRepository = blockRequestRepository;
     }
 
-    public async Task<IReadOnlyList<BlockRequestDto>> Handle(GetBlockRequestsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<BlockRequestDto>> Handle(GetBlockRequestsQuery request, CancellationToken cancellationToken)
     {
-        var blockRequests = await _blockRequestRepository.GetByTenantIdAsync(request.TenantId, request.Status, cancellationToken);
+        var result = await _blockRequestRepository.GetPagedAsync(
+            request.TenantId, request.Status, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return blockRequests.Select(b => new BlockRequestDto(
-            b.Id,
-            b.OrderItemProcessId,
-            b.OrderItemSubProcessId,
-            b.RequestedByUserId,
-            b.RequestNote,
-            b.Status,
-            b.CreatedAt,
-            b.HandledByUserId,
-            b.HandledAt,
-            b.BlockReason,
-            b.RejectionNote)).ToList();
+        return result.MapItems(b => b.Adapt<BlockRequestDto>());
     }
 }

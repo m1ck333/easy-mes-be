@@ -21,9 +21,22 @@ public class WorkSessionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetWorkSessions([FromQuery] Guid tenantId, [FromQuery] DateTime date, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetWorkSessions(
+        [FromQuery] Guid tenantId,
+        [FromQuery] DateTime date,
+        [FromQuery] Guid? userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetWorkSessionsQuery(tenantId, date), cancellationToken);
+        var result = await _mediator.Send(new GetWorkSessionsQuery
+        {
+            TenantId = tenantId,
+            Date = date,
+            UserId = userId,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
         return Ok(result);
     }
 

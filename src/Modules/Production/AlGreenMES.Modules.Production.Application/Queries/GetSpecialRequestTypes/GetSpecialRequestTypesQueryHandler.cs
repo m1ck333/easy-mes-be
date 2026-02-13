@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Production.Application.DTOs;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Queries.GetSpecialRequestTypes;
 
-public class GetSpecialRequestTypesQueryHandler : IRequestHandler<GetSpecialRequestTypesQuery, IReadOnlyList<SpecialRequestTypeDto>>
+public class GetSpecialRequestTypesQueryHandler : IRequestHandler<GetSpecialRequestTypesQuery, PagedResult<SpecialRequestTypeDto>>
 {
     private readonly ISpecialRequestTypeRepository _repository;
 
@@ -13,14 +15,12 @@ public class GetSpecialRequestTypesQueryHandler : IRequestHandler<GetSpecialRequ
         _repository = repository;
     }
 
-    public async Task<IReadOnlyList<SpecialRequestTypeDto>> Handle(GetSpecialRequestTypesQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<SpecialRequestTypeDto>> Handle(GetSpecialRequestTypesQuery request, CancellationToken cancellationToken)
     {
-        var types = await _repository.GetByTenantIdAsync(request.TenantId, cancellationToken);
+        var result = await _repository.GetPagedAsync(
+            request.TenantId, request.IsActive, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return types.Select(srt => new SpecialRequestTypeDto(
-            srt.Id, srt.TenantId, srt.Code, srt.Name, srt.Description,
-            srt.AddsProcesses, srt.RemovesProcesses, srt.OnlyProcesses,
-            srt.IgnoresDependencies, srt.IsActive
-        )).ToList();
+        return result.MapItems(srt => srt.Adapt<SpecialRequestTypeDto>());
     }
 }

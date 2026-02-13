@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Production.Application.DTOs;
 using AlGreenMES.Modules.Production.Application.Interfaces;
 using AlGreenMES.Modules.Production.Domain.Entities;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Commands.CreateProductCategory;
@@ -29,6 +30,6 @@ public class CreateProductCategoryCommandHandler : IRequestHandler<CreateProduct
         await _categoryRepository.AddAsync(category, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ProductCategoryDto(category.Id, category.TenantId, category.Name, category.Description, category.IsActive);
+        return category.Adapt<ProductCategoryDto>();
     }
 }

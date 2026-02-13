@@ -1,5 +1,6 @@
 using AlGreenMES.Modules.Tenancy.Application.DTOs;
 using AlGreenMES.Modules.Tenancy.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Tenancy.Application.Queries.GetTenantByCode;
@@ -19,12 +20,6 @@ public class GetTenantByCodeQueryHandler : IRequestHandler<GetTenantByCodeQuery,
         if (tenant is null)
             return null;
 
-        return new TenantDto(
-            tenant.Id,
-            tenant.Name,
-            tenant.Code,
-            tenant.IsActive,
-            tenant.CreatedAt,
-            tenant.UpdatedAt);
+        return tenant.Adapt<TenantDto>();
     }
 }

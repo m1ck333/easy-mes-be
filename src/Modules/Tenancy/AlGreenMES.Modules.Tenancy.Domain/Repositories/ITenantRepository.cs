@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Tenancy.Domain.Entities;
 
 namespace AlGreenMES.Modules.Tenancy.Domain.Repositories;
@@ -9,4 +10,5 @@ public interface ITenantRepository
     Task<IReadOnlyList<Tenant>> GetAllAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Tenant tenant, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(string code, CancellationToken cancellationToken = default);
+    Task<PagedResult<Tenant>> GetPagedAsync(bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
 }

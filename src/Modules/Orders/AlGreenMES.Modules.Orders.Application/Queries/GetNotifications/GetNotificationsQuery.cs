@@ -1,6 +1,10 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
-using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetNotifications;
 
-public record GetNotificationsQuery(Guid UserId) : IRequest<IReadOnlyList<NotificationDto>>;
+public record GetNotificationsQuery : PagedQuery<PagedResult<NotificationDto>>
+{
+    public Guid UserId { get; init; }
+    public bool? IsRead { get; init; }
+}

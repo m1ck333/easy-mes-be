@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 
@@ -12,4 +13,5 @@ public interface IOrderRepository
     Task AddAsync(Order order, CancellationToken cancellationToken = default);
     Task<bool> ExistsByOrderNumberAsync(string orderNumber, Guid tenantId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Order>> GetActiveOrdersWithProcessesAsync(Guid tenantId, CancellationToken cancellationToken = default);
+    Task<PagedResult<Order>> GetPagedAsync(Guid tenantId, OrderStatus? status, OrderType? orderType, DateTime? dateFrom, DateTime? dateTo, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
 }

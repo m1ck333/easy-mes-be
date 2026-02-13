@@ -2,6 +2,7 @@ using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using AlGreenMES.Modules.Tenancy.Application.DTOs;
 using AlGreenMES.Modules.Tenancy.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Tenancy.Application.Commands.UpdateTenant;
@@ -20,17 +21,11 @@ public class UpdateTenantCommandHandler : IRequestHandler<UpdateTenantCommand, T
     public async Task<TenantDto> Handle(UpdateTenantCommand request, CancellationToken cancellationToken)
     {
         var tenant = await _tenantRepository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new DomainException("TENANT_NOT_FOUND", $"Tenant with id '{request.Id}' was not found.");
+            ?? throw new NotFoundException("Tenant", request.Id);
 
         tenant.Update(request.Name, request.IsActive);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new TenantDto(
-            tenant.Id,
-            tenant.Name,
-            tenant.Code,
-            tenant.IsActive,
-            tenant.CreatedAt,
-            tenant.UpdatedAt);
+        return tenant.Adapt<TenantDto>();
     }
 }

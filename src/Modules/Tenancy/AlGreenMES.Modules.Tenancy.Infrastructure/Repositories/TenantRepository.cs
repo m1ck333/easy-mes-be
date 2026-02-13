@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Tenancy.Domain.Entities;
 using AlGreenMES.Modules.Tenancy.Domain.Repositories;
 using AlGreenMES.Modules.Tenancy.Infrastructure.Persistence;
@@ -47,5 +48,23 @@ public class TenantRepository : ITenantRepository
         var normalizedCode = code.Trim().ToUpperInvariant();
         return await _dbContext.Tenants
             .AnyAsync(t => t.Code == normalizedCode, cancellationToken);
+    }
+
+    public async Task<PagedResult<Tenant>> GetPagedAsync(bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Tenants.AsQueryable();
+
+        if (isActive.HasValue)
+            query = query.Where(t => t.IsActive == isActive.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.ToLower();
+            query = query.Where(t => t.Name.ToLower().Contains(s) || t.Code.ToLower().Contains(s));
+        }
+
+        query = query.OrderBy(t => t.Name);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

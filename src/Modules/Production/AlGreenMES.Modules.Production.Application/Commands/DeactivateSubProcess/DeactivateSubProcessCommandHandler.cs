@@ -19,10 +19,10 @@ public class DeactivateSubProcessCommandHandler : IRequestHandler<DeactivateSubP
     public async Task<Unit> Handle(DeactivateSubProcessCommand request, CancellationToken cancellationToken)
     {
         var process = await _processRepository.GetByIdWithSubProcessesAsync(request.ProcessId, cancellationToken)
-            ?? throw new DomainException("PROCESS_NOT_FOUND", $"Process with id '{request.ProcessId}' was not found.");
+            ?? throw new NotFoundException("Process", request.ProcessId);
 
         var subProcess = process.SubProcesses.FirstOrDefault(sp => sp.Id == request.SubProcessId)
-            ?? throw new DomainException("SUBPROCESS_NOT_FOUND", $"Sub-process with id '{request.SubProcessId}' was not found.");
+            ?? throw new NotFoundException("SubProcess", request.SubProcessId);
 
         subProcess.Deactivate();
         await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -34,9 +34,28 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetOrders([FromQuery] Guid tenantId, [FromQuery] OrderStatus? status, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetOrders(
+        [FromQuery] Guid tenantId,
+        [FromQuery] OrderStatus? status,
+        [FromQuery] OrderType? orderType,
+        [FromQuery] DateTime? dateFrom,
+        [FromQuery] DateTime? dateTo,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetOrdersQuery(tenantId, status), cancellationToken);
+        var result = await _mediator.Send(new GetOrdersQuery
+        {
+            TenantId = tenantId,
+            Status = status,
+            OrderType = orderType,
+            DateFrom = dateFrom,
+            DateTo = dateTo,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
         return Ok(result);
     }
 
@@ -44,7 +63,6 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetOrderByIdQuery(id), cancellationToken);
-        if (result is null) return NotFound();
         return Ok(result);
     }
 

@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Tenancy.Application.Queries.GetTenantSettings;
 
-public record GetTenantSettingsQuery(Guid TenantId) : IRequest<TenantSettingsDto?>;
+public record GetTenantSettingsQuery(Guid TenantId) : IRequest<TenantSettingsDto>;

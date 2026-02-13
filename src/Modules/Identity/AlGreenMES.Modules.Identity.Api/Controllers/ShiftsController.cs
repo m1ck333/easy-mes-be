@@ -21,9 +21,22 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetShifts([FromQuery] Guid tenantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetShifts(
+        [FromQuery] Guid tenantId,
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetShiftsQuery(tenantId), cancellationToken);
+        var result = await _mediator.Send(new GetShiftsQuery
+        {
+            TenantId = tenantId,
+            IsActive = isActive,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
         return Ok(result);
     }
 

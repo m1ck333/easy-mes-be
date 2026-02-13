@@ -2,6 +2,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs.Tablet;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.Tablet.GetTabletIncoming;
@@ -50,26 +51,14 @@ public class GetTabletIncomingQueryHandler : IRequestHandler<GetTabletIncomingQu
                         var depProcess = item.Processes.FirstOrDefault(p => p.ProcessId == depProcessId);
                         if (depProcess != null && depProcess.Status != ProcessStatus.Completed && depProcess.Status != ProcessStatus.Withdrawn)
                         {
-                            blockingProcesses.Add(new BlockingProcessDto(
-                                depProcess.Id,
-                                depProcess.ProcessId,
-                                depProcess.Status));
+                            blockingProcesses.Add(depProcess.Adapt<BlockingProcessDto>());
                         }
                     }
 
                     if (blockingProcesses.Count == 0) continue;
 
-                    result.Add(new TabletIncomingDto(
-                        process.Id,
-                        order.Id,
-                        order.OrderNumber,
-                        order.Priority,
-                        order.DeliveryDate,
-                        item.ProductName,
-                        item.Quantity,
-                        process.Complexity,
-                        process.Status,
-                        blockingProcesses));
+                    var dto = process.Adapt<TabletIncomingDto>() with { BlockingProcesses = blockingProcesses };
+                    result.Add(dto);
                 }
             }
         }

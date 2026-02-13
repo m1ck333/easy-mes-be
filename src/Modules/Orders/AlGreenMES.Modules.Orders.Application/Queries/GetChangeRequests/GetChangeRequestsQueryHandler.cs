@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetChangeRequests;
 
-public class GetChangeRequestsQueryHandler : IRequestHandler<GetChangeRequestsQuery, IReadOnlyList<ChangeRequestDto>>
+public class GetChangeRequestsQueryHandler : IRequestHandler<GetChangeRequestsQuery, PagedResult<ChangeRequestDto>>
 {
     private readonly IChangeRequestRepository _changeRequestRepository;
 
@@ -13,20 +15,12 @@ public class GetChangeRequestsQueryHandler : IRequestHandler<GetChangeRequestsQu
         _changeRequestRepository = changeRequestRepository;
     }
 
-    public async Task<IReadOnlyList<ChangeRequestDto>> Handle(GetChangeRequestsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<ChangeRequestDto>> Handle(GetChangeRequestsQuery request, CancellationToken cancellationToken)
     {
-        var changeRequests = await _changeRequestRepository.GetByTenantIdAsync(request.TenantId, request.Status, cancellationToken);
+        var result = await _changeRequestRepository.GetPagedAsync(
+            request.TenantId, request.Status, request.RequestType, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return changeRequests.Select(c => new ChangeRequestDto(
-            c.Id,
-            c.OrderId,
-            c.RequestedByUserId,
-            c.RequestType,
-            c.Description,
-            c.Status,
-            c.CreatedAt,
-            c.HandledByUserId,
-            c.HandledAt,
-            c.ResponseNote)).ToList();
+        return result.MapItems(c => c.Adapt<ChangeRequestDto>());
     }
 }

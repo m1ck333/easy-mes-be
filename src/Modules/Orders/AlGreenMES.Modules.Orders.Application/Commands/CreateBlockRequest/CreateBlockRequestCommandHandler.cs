@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CreateBlockRequest;
@@ -56,17 +57,6 @@ public class CreateBlockRequestCommandHandler : IRequestHandler<CreateBlockReque
                 blockRequest.RequestNote,
                 request.TenantId), cancellationToken);
 
-        return new BlockRequestDto(
-            blockRequest.Id,
-            blockRequest.OrderItemProcessId,
-            blockRequest.OrderItemSubProcessId,
-            blockRequest.RequestedByUserId,
-            blockRequest.RequestNote,
-            blockRequest.Status,
-            blockRequest.CreatedAt,
-            blockRequest.HandledByUserId,
-            blockRequest.HandledAt,
-            blockRequest.BlockReason,
-            blockRequest.RejectionNote);
+        return blockRequest.Adapt<BlockRequestDto>();
     }
 }

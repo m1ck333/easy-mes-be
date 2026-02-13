@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Identity.Application.DTOs;
 using AlGreenMES.Modules.Identity.Application.Interfaces;
 using AlGreenMES.Modules.Identity.Application.Services;
 using AlGreenMES.Modules.Identity.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Identity.Application.Commands.RefreshToken;
@@ -35,7 +36,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
             throw new DomainException("INVALID_REFRESH_TOKEN", "The refresh token is invalid or expired.");
 
         var user = await _userRepository.GetByIdAsync(existingToken.UserId, cancellationToken)
-            ?? throw new DomainException("USER_NOT_FOUND", "The user associated with this token was not found.");
+            ?? throw new NotFoundException("The user associated with this token was not found.");
 
         if (!user.IsActive)
             throw new DomainException("USER_INACTIVE", "The user account is not active.");
@@ -54,19 +55,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
         await _refreshTokenRepository.AddAsync(newRefreshToken, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var userDto = new UserDto(
-            user.Id,
-            user.TenantId,
-            user.Email,
-            user.FirstName,
-            user.LastName,
-            user.FullName,
-            user.Role,
-            user.ProcessId,
-            user.CanIncludeWithdrawnInAnalysis,
-            user.IsActive,
-            user.CreatedAt,
-            user.UpdatedAt);
+        var userDto = user.Adapt<UserDto>();
 
         return new LoginResponseDto(newToken, newRefreshTokenValue, userDto);
     }

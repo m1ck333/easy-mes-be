@@ -2,6 +2,7 @@ using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.ChangePriority;
@@ -21,22 +22,11 @@ public class ChangePriorityCommandHandler : IRequestHandler<ChangePriorityComman
     {
         var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, cancellationToken);
         if (order == null)
-            throw new DomainException("ORDER_NOT_FOUND", $"Order with id '{request.OrderId}' was not found.");
+            throw new NotFoundException("Order", request.OrderId);
 
         order.ChangePriority(request.Priority);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new OrderDto(
-            order.Id,
-            order.TenantId,
-            order.OrderNumber,
-            order.DeliveryDate,
-            order.Priority,
-            order.OrderType,
-            order.Status,
-            order.Notes,
-            order.CustomWarningDays,
-            order.CustomCriticalDays,
-            order.Items.Count);
+        return order.Adapt<OrderDto>();
     }
 }

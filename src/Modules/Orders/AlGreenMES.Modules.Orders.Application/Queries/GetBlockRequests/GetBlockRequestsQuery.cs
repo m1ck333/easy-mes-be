@@ -1,7 +1,11 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Domain.Enums;
-using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetBlockRequests;
 
-public record GetBlockRequestsQuery(Guid TenantId, RequestStatus? Status) : IRequest<IReadOnlyList<BlockRequestDto>>;
+public record GetBlockRequestsQuery : PagedQuery<PagedResult<BlockRequestDto>>
+{
+    public Guid TenantId { get; init; }
+    public RequestStatus? Status { get; init; }
+}

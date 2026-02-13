@@ -1,7 +1,14 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Domain.Enums;
-using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetOrders;
 
-public record GetOrdersQuery(Guid TenantId, OrderStatus? Status) : IRequest<IReadOnlyList<OrderDto>>;
+public record GetOrdersQuery : PagedQuery<PagedResult<OrderDto>>
+{
+    public Guid TenantId { get; init; }
+    public OrderStatus? Status { get; init; }
+    public OrderType? OrderType { get; init; }
+    public DateTime? DateFrom { get; init; }
+    public DateTime? DateTo { get; init; }
+}

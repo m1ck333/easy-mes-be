@@ -1,6 +1,10 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Identity.Application.DTOs;
-using MediatR;
 
 namespace AlGreenMES.Modules.Identity.Application.Queries.GetShifts;
 
-public record GetShiftsQuery(Guid TenantId) : IRequest<IReadOnlyList<ShiftDto>>;
+public record GetShiftsQuery : PagedQuery<PagedResult<ShiftDto>>
+{
+    public Guid TenantId { get; init; }
+    public bool? IsActive { get; init; }
+}

@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Identity.Application.DTOs;
 using AlGreenMES.Modules.Identity.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Identity.Application.Queries.GetShifts;
 
-public class GetShiftsQueryHandler : IRequestHandler<GetShiftsQuery, IReadOnlyList<ShiftDto>>
+public class GetShiftsQueryHandler : IRequestHandler<GetShiftsQuery, PagedResult<ShiftDto>>
 {
     private readonly IShiftRepository _shiftRepository;
 
@@ -13,16 +15,12 @@ public class GetShiftsQueryHandler : IRequestHandler<GetShiftsQuery, IReadOnlyLi
         _shiftRepository = shiftRepository;
     }
 
-    public async Task<IReadOnlyList<ShiftDto>> Handle(GetShiftsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<ShiftDto>> Handle(GetShiftsQuery request, CancellationToken cancellationToken)
     {
-        var shifts = await _shiftRepository.GetByTenantIdAsync(request.TenantId, cancellationToken);
+        var result = await _shiftRepository.GetPagedAsync(
+            request.TenantId, request.IsActive, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return shifts.Select(s => new ShiftDto(
-            s.Id,
-            s.TenantId,
-            s.Name,
-            s.StartTime,
-            s.EndTime,
-            s.IsActive)).ToList();
+        return result.MapItems(s => s.Adapt<ShiftDto>());
     }
 }

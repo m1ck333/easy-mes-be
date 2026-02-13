@@ -65,7 +65,7 @@ public class OrderItem : AuditableEntity
     public void RemoveSpecialRequest(Guid specialRequestTypeId)
     {
         var sr = _specialRequests.FirstOrDefault(s => s.SpecialRequestTypeId == specialRequestTypeId)
-            ?? throw new DomainException("REQUEST_NOT_FOUND", "Special request not found.");
+            ?? throw new NotFoundException("SpecialRequest", specialRequestTypeId);
         _specialRequests.Remove(sr);
     }
 

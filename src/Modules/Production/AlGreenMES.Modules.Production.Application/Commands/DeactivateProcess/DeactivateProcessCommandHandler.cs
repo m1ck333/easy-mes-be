@@ -19,7 +19,7 @@ public class DeactivateProcessCommandHandler : IRequestHandler<DeactivateProcess
     public async Task<Unit> Handle(DeactivateProcessCommand request, CancellationToken cancellationToken)
     {
         var process = await _processRepository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new DomainException("PROCESS_NOT_FOUND", $"Process with id '{request.Id}' was not found.");
+            ?? throw new NotFoundException("Process", request.Id);
 
         process.Deactivate();
         await _unitOfWork.SaveChangesAsync(cancellationToken);

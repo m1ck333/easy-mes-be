@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Production.Domain.Entities;
 
 namespace AlGreenMES.Modules.Production.Domain.Repositories;
@@ -9,4 +10,5 @@ public interface IProcessRepository
     Task<IReadOnlyList<Process>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
     Task AddAsync(Process process, CancellationToken cancellationToken = default);
     Task<bool> ExistsByCodeAsync(string code, Guid tenantId, CancellationToken cancellationToken = default);
+    Task<PagedResult<Process>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
 }

@@ -2,6 +2,7 @@ using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.RejectBlockRequest;
@@ -21,22 +22,11 @@ public class RejectBlockRequestCommandHandler : IRequestHandler<RejectBlockReque
     {
         var blockRequest = await _blockRequestRepository.GetByIdAsync(request.Id, cancellationToken);
         if (blockRequest == null)
-            throw new DomainException("BLOCK_REQUEST_NOT_FOUND", $"Block request with id '{request.Id}' was not found.");
+            throw new NotFoundException("BlockRequest", request.Id);
 
         blockRequest.Reject(request.HandledByUserId, request.RejectionNote);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new BlockRequestDto(
-            blockRequest.Id,
-            blockRequest.OrderItemProcessId,
-            blockRequest.OrderItemSubProcessId,
-            blockRequest.RequestedByUserId,
-            blockRequest.RequestNote,
-            blockRequest.Status,
-            blockRequest.CreatedAt,
-            blockRequest.HandledByUserId,
-            blockRequest.HandledAt,
-            blockRequest.BlockReason,
-            blockRequest.RejectionNote);
+        return blockRequest.Adapt<BlockRequestDto>();
     }
 }

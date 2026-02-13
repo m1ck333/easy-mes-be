@@ -20,7 +20,7 @@ public class WithdrawProcessCommandHandler : IRequestHandler<WithdrawProcessComm
     {
         var process = await _orderItemProcessRepository.GetByIdAsync(request.OrderItemProcessId, cancellationToken);
         if (process == null)
-            throw new DomainException("PROCESS_NOT_FOUND", $"Order item process with id '{request.OrderItemProcessId}' was not found.");
+            throw new NotFoundException("OrderItemProcess", request.OrderItemProcessId);
 
         process.Withdraw(request.UserId, request.Reason);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

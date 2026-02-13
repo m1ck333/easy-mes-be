@@ -64,7 +64,7 @@ public class Order : AuditableEntity
             throw new DomainException("ORDER_NOT_DRAFT", "Can only remove items from draft orders.");
 
         var item = _items.FirstOrDefault(i => i.Id == itemId)
-            ?? throw new DomainException("ITEM_NOT_FOUND", "Order item not found.");
+            ?? throw new NotFoundException("OrderItem", itemId);
         _items.Remove(item);
     }
 

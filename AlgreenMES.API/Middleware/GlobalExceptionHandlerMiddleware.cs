@@ -9,6 +9,11 @@ public class GlobalExceptionHandlerMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<GlobalExceptionHandlerMiddleware> _logger;
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     public GlobalExceptionHandlerMiddleware(RequestDelegate next, ILogger<GlobalExceptionHandlerMiddleware> logger)
     {
         _next = next;
@@ -21,45 +26,57 @@ public class GlobalExceptionHandlerMiddleware
         {
             await _next(context);
         }
-        catch (DomainException ex)
+        catch (NotFoundException ex)
         {
-            _logger.LogWarning(ex, "Domain exception: {Code} - {Message}", ex.Code, ex.Message);
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            context.Response.ContentType = "application/json";
-
-            var response = new
+            _logger.LogWarning(ex, "Not found: {Code} - {Message}", ex.Code, ex.Message);
+            await WriteResponseAsync(context, HttpStatusCode.NotFound, new
+            {
+                error = new { code = ex.Code, message = ex.Message }
+            });
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning(ex, "Validation failed: {Message}", ex.Message);
+            await WriteResponseAsync(context, HttpStatusCode.UnprocessableEntity, new
             {
                 error = new
                 {
-                    code = ex.Code,
-                    message = ex.Message
+                    code = "VALIDATION_ERROR",
+                    message = ex.Message,
+                    errors = ex.Errors.Select(e => new { property = e.Property, message = e.Message })
                 }
-            };
-
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response, new JsonSerializerOptions
+            });
+        }
+        catch (ForbiddenException ex)
+        {
+            _logger.LogWarning(ex, "Forbidden: {Code} - {Message}", ex.Code, ex.Message);
+            await WriteResponseAsync(context, HttpStatusCode.Forbidden, new
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            }));
+                error = new { code = ex.Code, message = ex.Message }
+            });
+        }
+        catch (DomainException ex)
+        {
+            _logger.LogWarning(ex, "Domain exception: {Code} - {Message}", ex.Code, ex.Message);
+            await WriteResponseAsync(context, HttpStatusCode.BadRequest, new
+            {
+                error = new { code = ex.Code, message = ex.Message }
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception");
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            var response = new
+            await WriteResponseAsync(context, HttpStatusCode.InternalServerError, new
             {
-                error = new
-                {
-                    code = "INTERNAL_ERROR",
-                    message = "An unexpected error occurred."
-                }
-            };
-
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            }));
+                error = new { code = "INTERNAL_ERROR", message = "An unexpected error occurred." }
+            });
         }
+    }
+
+    private static async Task WriteResponseAsync(HttpContext context, HttpStatusCode statusCode, object response)
+    {
+        context.Response.StatusCode = (int)statusCode;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonOptions));
     }
 }

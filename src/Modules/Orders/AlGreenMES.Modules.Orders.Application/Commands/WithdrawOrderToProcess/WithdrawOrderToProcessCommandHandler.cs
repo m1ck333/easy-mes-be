@@ -27,7 +27,7 @@ public class WithdrawOrderToProcessCommandHandler : IRequestHandler<WithdrawOrde
     {
         var order = await _orderRepository.GetByIdWithFullDetailsAsync(request.OrderId, cancellationToken);
         if (order == null)
-            throw new DomainException("ORDER_NOT_FOUND", $"Order with id '{request.OrderId}' was not found.");
+            throw new NotFoundException("Order", request.OrderId);
 
         if (order.Status != OrderStatus.Active)
             throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active to withdraw to a process.");

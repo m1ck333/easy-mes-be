@@ -2,6 +2,7 @@ using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Production.Application.DTOs;
 using AlGreenMES.Modules.Production.Application.Interfaces;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Commands.UpdateSpecialRequestType;
@@ -20,7 +21,7 @@ public class UpdateSpecialRequestTypeCommandHandler : IRequestHandler<UpdateSpec
     public async Task<SpecialRequestTypeDto> Handle(UpdateSpecialRequestTypeCommand request, CancellationToken cancellationToken)
     {
         var srt = await _repository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new DomainException("SRT_NOT_FOUND", $"Special request type with id '{request.Id}' was not found.");
+            ?? throw new NotFoundException("SpecialRequestType", request.Id);
 
         srt.Update(request.Name, request.Description);
 
@@ -33,9 +34,6 @@ public class UpdateSpecialRequestTypeCommandHandler : IRequestHandler<UpdateSpec
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new SpecialRequestTypeDto(
-            srt.Id, srt.TenantId, srt.Code, srt.Name, srt.Description,
-            srt.AddsProcesses, srt.RemovesProcesses, srt.OnlyProcesses,
-            srt.IgnoresDependencies, srt.IsActive);
+        return srt.Adapt<SpecialRequestTypeDto>();
     }
 }

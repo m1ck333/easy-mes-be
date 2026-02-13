@@ -22,7 +22,7 @@ public class ActivateOrderCommandHandler : IRequestHandler<ActivateOrderCommand,
     public async Task<Unit> Handle(ActivateOrderCommand request, CancellationToken cancellationToken)
     {
         var order = await _orderRepository.GetByIdWithItemsAsync(request.Id, cancellationToken)
-            ?? throw new DomainException("ORDER_NOT_FOUND", $"Order with id '{request.Id}' was not found.");
+            ?? throw new NotFoundException("Order", request.Id);
 
         order.Activate();
         await _unitOfWork.SaveChangesAsync(cancellationToken);

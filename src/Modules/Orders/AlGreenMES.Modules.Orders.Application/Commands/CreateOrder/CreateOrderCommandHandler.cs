@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CreateOrder;
@@ -36,17 +37,6 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
         await _orderRepository.AddAsync(order, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new OrderDto(
-            order.Id,
-            order.TenantId,
-            order.OrderNumber,
-            order.DeliveryDate,
-            order.Priority,
-            order.OrderType,
-            order.Status,
-            order.Notes,
-            order.CustomWarningDays,
-            order.CustomCriticalDays,
-            0);
+        return order.Adapt<OrderDto>();
     }
 }

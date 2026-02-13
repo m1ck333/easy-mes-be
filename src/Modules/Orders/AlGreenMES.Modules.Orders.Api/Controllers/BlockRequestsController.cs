@@ -23,9 +23,22 @@ public class BlockRequestsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetBlockRequests([FromQuery] Guid tenantId, [FromQuery] RequestStatus? status, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetBlockRequests(
+        [FromQuery] Guid tenantId,
+        [FromQuery] RequestStatus? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetBlockRequestsQuery(tenantId, status), cancellationToken);
+        var result = await _mediator.Send(new GetBlockRequestsQuery
+        {
+            TenantId = tenantId,
+            Status = status,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
         return Ok(result);
     }
 

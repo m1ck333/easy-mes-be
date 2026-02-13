@@ -2,6 +2,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs.Tablet;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.Tablet.GetTabletQueue;
@@ -52,16 +53,7 @@ public class GetTabletQueueQueryHandler : IRequestHandler<GetTabletQueueQuery, I
 
                     if (!allDepsCompleted) continue;
 
-                    result.Add(new TabletQueueItemDto(
-                        process.Id,
-                        order.Id,
-                        order.OrderNumber,
-                        order.Priority,
-                        order.DeliveryDate,
-                        item.ProductName,
-                        item.Quantity,
-                        process.Complexity,
-                        process.Status));
+                    result.Add(process.Adapt<TabletQueueItemDto>());
                 }
             }
         }

@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Identity.Domain.Entities;
 using AlGreenMES.Modules.Identity.Domain.Repositories;
 using AlGreenMES.Modules.Identity.Infrastructure.Persistence;
@@ -46,5 +47,26 @@ public class UserRepository : IUserRepository
         var normalizedEmail = email.Trim().ToLowerInvariant();
         return await _dbContext.Users
             .AnyAsync(u => u.Email == normalizedEmail && u.TenantId == tenantId, cancellationToken);
+    }
+
+    public async Task<PagedResult<User>> GetPagedAsync(Guid tenantId, UserRole? role, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Users.Where(u => u.TenantId == tenantId);
+
+        if (role.HasValue)
+            query = query.Where(u => u.Role == role.Value);
+
+        if (isActive.HasValue)
+            query = query.Where(u => u.IsActive == isActive.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.ToLower();
+            query = query.Where(u => u.FirstName.ToLower().Contains(s) || u.LastName.ToLower().Contains(s) || u.Email.ToLower().Contains(s));
+        }
+
+        query = query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CompleteSubProcess;
@@ -31,7 +32,7 @@ public class CompleteSubProcessCommandHandler : IRequestHandler<CompleteSubProce
     {
         var subProcess = await _subProcessRepository.GetByIdWithFullDetailsAsync(request.OrderItemSubProcessId, cancellationToken);
         if (subProcess == null)
-            throw new DomainException("SUBPROCESS_NOT_FOUND", $"Sub-process with id '{request.OrderItemSubProcessId}' was not found.");
+            throw new NotFoundException("OrderItemSubProcess", request.OrderItemSubProcessId);
 
         var process = subProcess.OrderItemProcess;
 
@@ -91,12 +92,6 @@ public class CompleteSubProcessCommandHandler : IRequestHandler<CompleteSubProce
                     process.TenantId), cancellationToken);
         }
 
-        return new OrderItemSubProcessDto(
-            subProcess.Id,
-            subProcess.OrderItemProcessId,
-            subProcess.SubProcessId,
-            subProcess.Status,
-            subProcess.TotalDurationMinutes,
-            subProcess.IsWithdrawn);
+        return subProcess.Adapt<OrderItemSubProcessDto>();
     }
 }

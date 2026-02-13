@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CheckIn;
@@ -35,14 +36,6 @@ public class CheckInCommandHandler : IRequestHandler<CheckInCommand, WorkSession
         await _eventService.NotifyWorkerCheckedInAsync(
             new WorkerCheckedInEvent(request.UserId, request.ProcessId, session.Id, request.TenantId), cancellationToken);
 
-        return new WorkSessionDto(
-            session.Id,
-            session.ProcessId,
-            session.UserId,
-            session.CheckInTime,
-            session.CheckOutTime,
-            session.DurationMinutes,
-            session.Date,
-            session.IsActive);
+        return session.Adapt<WorkSessionDto>();
     }
 }

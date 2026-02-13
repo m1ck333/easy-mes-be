@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
@@ -45,5 +46,38 @@ public class ChangeRequestRepository : IChangeRequestRepository
     public async Task AddAsync(ChangeRequest request, CancellationToken cancellationToken = default)
     {
         await _dbContext.ChangeRequests.AddAsync(request, cancellationToken);
+    }
+
+    public async Task<PagedResult<ChangeRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, ChangeRequestType? requestType, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.ChangeRequests.Where(cr => cr.TenantId == tenantId);
+
+        if (status.HasValue)
+            query = query.Where(cr => cr.Status == status.Value);
+
+        if (requestType.HasValue)
+            query = query.Where(cr => cr.RequestType == requestType.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(cr => cr.Description.Contains(search));
+
+        query = query.OrderByDescending(cr => cr.CreatedAt);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+    }
+
+    public async Task<PagedResult<ChangeRequest>> GetPagedByUserAsync(Guid tenantId, Guid userId, RequestStatus? status, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.ChangeRequests.Where(cr => cr.TenantId == tenantId && cr.RequestedByUserId == userId);
+
+        if (status.HasValue)
+            query = query.Where(cr => cr.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(cr => cr.Description.Contains(search));
+
+        query = query.OrderByDescending(cr => cr.CreatedAt);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

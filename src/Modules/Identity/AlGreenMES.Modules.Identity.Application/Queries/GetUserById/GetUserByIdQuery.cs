@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Identity.Application.Queries.GetUserById;
 
-public record GetUserByIdQuery(Guid Id) : IRequest<UserDto?>;
+public record GetUserByIdQuery(Guid Id) : IRequest<UserDto>;

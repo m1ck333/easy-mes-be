@@ -2,6 +2,7 @@ using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.UpdateOrder;
@@ -20,22 +21,11 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Ord
     public async Task<OrderDto> Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
     {
         var order = await _orderRepository.GetByIdWithItemsAsync(request.Id, cancellationToken)
-            ?? throw new DomainException("ORDER_NOT_FOUND", $"Order with id '{request.Id}' was not found.");
+            ?? throw new NotFoundException("Order", request.Id);
 
         order.Update(request.Notes, request.CustomWarningDays, request.CustomCriticalDays);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new OrderDto(
-            order.Id,
-            order.TenantId,
-            order.OrderNumber,
-            order.DeliveryDate,
-            order.Priority,
-            order.OrderType,
-            order.Status,
-            order.Notes,
-            order.CustomWarningDays,
-            order.CustomCriticalDays,
-            order.Items.Count);
+        return order.Adapt<OrderDto>();
     }
 }

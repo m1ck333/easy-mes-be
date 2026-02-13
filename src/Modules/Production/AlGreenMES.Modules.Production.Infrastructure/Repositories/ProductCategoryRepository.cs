@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Production.Domain.Entities;
 using AlGreenMES.Modules.Production.Domain.Repositories;
 using AlGreenMES.Modules.Production.Infrastructure.Persistence;
@@ -50,5 +51,20 @@ public class ProductCategoryRepository : IProductCategoryRepository
         var normalizedName = name.Trim();
         return await _dbContext.ProductCategories
             .AnyAsync(c => c.Name == normalizedName && c.TenantId == tenantId, cancellationToken);
+    }
+
+    public async Task<PagedResult<ProductCategory>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.ProductCategories.Where(pc => pc.TenantId == tenantId);
+
+        if (isActive.HasValue)
+            query = query.Where(pc => pc.IsActive == isActive.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(pc => pc.Name.Contains(search));
+
+        query = query.OrderBy(pc => pc.Name);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

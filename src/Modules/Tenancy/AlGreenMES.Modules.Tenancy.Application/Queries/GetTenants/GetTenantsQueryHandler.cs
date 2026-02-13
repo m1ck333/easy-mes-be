@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Tenancy.Application.DTOs;
 using AlGreenMES.Modules.Tenancy.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Tenancy.Application.Queries.GetTenants;
 
-public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, IReadOnlyList<TenantDto>>
+public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, PagedResult<TenantDto>>
 {
     private readonly ITenantRepository _tenantRepository;
 
@@ -13,16 +15,12 @@ public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, IReadOnly
         _tenantRepository = tenantRepository;
     }
 
-    public async Task<IReadOnlyList<TenantDto>> Handle(GetTenantsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<TenantDto>> Handle(GetTenantsQuery request, CancellationToken cancellationToken)
     {
-        var tenants = await _tenantRepository.GetAllAsync(cancellationToken);
+        var result = await _tenantRepository.GetPagedAsync(
+            request.IsActive, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return tenants.Select(t => new TenantDto(
-            t.Id,
-            t.Name,
-            t.Code,
-            t.IsActive,
-            t.CreatedAt,
-            t.UpdatedAt)).ToList();
+        return result.MapItems(t => t.Adapt<TenantDto>());
     }
 }

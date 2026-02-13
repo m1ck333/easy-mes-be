@@ -19,7 +19,7 @@ public class DeactivateProductCategoryCommandHandler : IRequestHandler<Deactivat
     public async Task<Unit> Handle(DeactivateProductCategoryCommand request, CancellationToken cancellationToken)
     {
         var category = await _categoryRepository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new DomainException("CATEGORY_NOT_FOUND", $"Product category with id '{request.Id}' was not found.");
+            ?? throw new NotFoundException("ProductCategory", request.Id);
 
         category.Deactivate();
         await _unitOfWork.SaveChangesAsync(cancellationToken);

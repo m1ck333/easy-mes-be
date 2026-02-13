@@ -26,9 +26,22 @@ public class ProcessesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetProcesses([FromQuery] Guid tenantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProcesses(
+        [FromQuery] Guid tenantId,
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProcessesQuery(tenantId), cancellationToken);
+        var result = await _mediator.Send(new GetProcessesQuery
+        {
+            TenantId = tenantId,
+            IsActive = isActive,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
         return Ok(result);
     }
 
@@ -36,7 +49,6 @@ public class ProcessesController : ControllerBase
     public async Task<IActionResult> GetProcessById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetProcessByIdQuery(id), cancellationToken);
-        if (result is null) return NotFound();
         return Ok(result);
     }
 

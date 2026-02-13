@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
 using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
@@ -44,5 +45,20 @@ public class NotificationRepository : INotificationRepository
         await _dbContext.Notifications
             .Where(n => n.UserId == userId && !n.IsRead)
             .ExecuteUpdateAsync(n => n.SetProperty(x => x.IsRead, true), cancellationToken);
+    }
+
+    public async Task<PagedResult<Notification>> GetPagedAsync(Guid userId, bool? isRead, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Notifications.Where(n => n.UserId == userId);
+
+        if (isRead.HasValue)
+            query = query.Where(n => n.IsRead == isRead.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(n => n.Message.Contains(search));
+
+        query = query.OrderByDescending(n => n.CreatedAt);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

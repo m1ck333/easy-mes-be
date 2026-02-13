@@ -1,6 +1,7 @@
 using AlGreenMES.Modules.Orders.Application.DTOs.Tablet;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.Tablet.GetTabletActiveWork;
@@ -29,24 +30,7 @@ public class GetTabletActiveWorkQueryHandler : IRequestHandler<GetTabletActiveWo
                     if (process.ProcessId != request.ProcessId) continue;
                     if (process.Status != ProcessStatus.InProgress) continue;
 
-                    result.Add(new TabletActiveWorkDto(
-                        process.Id,
-                        order.Id,
-                        order.OrderNumber,
-                        order.Priority,
-                        order.DeliveryDate,
-                        item.ProductName,
-                        item.Quantity,
-                        process.Complexity,
-                        process.Status,
-                        process.StartedAt,
-                        process.TotalDurationMinutes,
-                        process.SubProcesses.Select(sp => new TabletSubProcessDto(
-                            sp.Id,
-                            sp.SubProcessId,
-                            sp.Status,
-                            sp.TotalDurationMinutes,
-                            sp.IsWithdrawn)).ToList()));
+                    result.Add(process.Adapt<TabletActiveWorkDto>());
                 }
             }
         }

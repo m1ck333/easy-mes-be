@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Production.Domain.Entities;
 using AlGreenMES.Modules.Production.Domain.Repositories;
 using AlGreenMES.Modules.Production.Infrastructure.Persistence;
@@ -38,5 +39,23 @@ public class SpecialRequestTypeRepository : ISpecialRequestTypeRepository
         var normalizedCode = code.Trim().ToUpperInvariant();
         return await _dbContext.SpecialRequestTypes
             .AnyAsync(s => s.Code == normalizedCode && s.TenantId == tenantId, cancellationToken);
+    }
+
+    public async Task<PagedResult<SpecialRequestType>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.SpecialRequestTypes.Where(srt => srt.TenantId == tenantId);
+
+        if (isActive.HasValue)
+            query = query.Where(srt => srt.IsActive == isActive.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.ToLower();
+            query = query.Where(srt => srt.Name.ToLower().Contains(s) || srt.Code.ToLower().Contains(s));
+        }
+
+        query = query.OrderBy(srt => srt.Code);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

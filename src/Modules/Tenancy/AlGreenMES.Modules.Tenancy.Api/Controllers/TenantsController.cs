@@ -22,9 +22,20 @@ public class TenantsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetTenants(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetTenants(
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetTenantsQuery(), cancellationToken);
+        var result = await _mediator.Send(new GetTenantsQuery
+        {
+            IsActive = isActive,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
         return Ok(result);
     }
 
@@ -32,9 +43,6 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> GetTenantById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetTenantByIdQuery(id), cancellationToken);
-        if (result is null)
-            return NotFound();
-
         return Ok(result);
     }
 
@@ -56,9 +64,6 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> GetTenantSettings(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetTenantSettingsQuery(id), cancellationToken);
-        if (result is null)
-            return NotFound();
-
         return Ok(result);
     }
 

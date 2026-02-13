@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetOrderById;
 
-public record GetOrderByIdQuery(Guid Id) : IRequest<OrderDetailDto?>;
+public record GetOrderByIdQuery(Guid Id) : IRequest<OrderDetailDto>;

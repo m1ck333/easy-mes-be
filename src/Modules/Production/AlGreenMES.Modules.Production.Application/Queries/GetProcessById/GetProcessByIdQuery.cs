@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Queries.GetProcessById;
 
-public record GetProcessByIdQuery(Guid Id) : IRequest<ProcessDto?>;
+public record GetProcessByIdQuery(Guid Id) : IRequest<ProcessDto>;

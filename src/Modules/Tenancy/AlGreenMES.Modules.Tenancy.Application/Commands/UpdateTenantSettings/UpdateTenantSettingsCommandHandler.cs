@@ -2,6 +2,7 @@ using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using AlGreenMES.Modules.Tenancy.Application.DTOs;
 using AlGreenMES.Modules.Tenancy.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Tenancy.Application.Commands.UpdateTenantSettings;
@@ -20,10 +21,10 @@ public class UpdateTenantSettingsCommandHandler : IRequestHandler<UpdateTenantSe
     public async Task<TenantSettingsDto> Handle(UpdateTenantSettingsCommand request, CancellationToken cancellationToken)
     {
         var tenant = await _tenantRepository.GetByIdAsync(request.TenantId, cancellationToken)
-            ?? throw new DomainException("TENANT_NOT_FOUND", $"Tenant with id '{request.TenantId}' was not found.");
+            ?? throw new NotFoundException("Tenant", request.TenantId);
 
         if (tenant.Settings is null)
-            throw new DomainException("TENANT_SETTINGS_NOT_FOUND", "Tenant settings were not found.");
+            throw new NotFoundException("Tenant settings were not found.");
 
         tenant.Settings.Update(
             request.DefaultWarningDays,
@@ -33,12 +34,6 @@ public class UpdateTenantSettingsCommandHandler : IRequestHandler<UpdateTenantSe
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new TenantSettingsDto(
-            tenant.Settings.Id,
-            tenant.Settings.TenantId,
-            tenant.Settings.DefaultWarningDays,
-            tenant.Settings.DefaultCriticalDays,
-            tenant.Settings.WarningColor,
-            tenant.Settings.CriticalColor);
+        return tenant.Settings.Adapt<TenantSettingsDto>();
     }
 }

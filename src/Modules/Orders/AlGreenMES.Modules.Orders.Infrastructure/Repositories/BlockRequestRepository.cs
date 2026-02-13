@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
@@ -37,5 +38,20 @@ public class BlockRequestRepository : IBlockRequestRepository
     public async Task AddAsync(BlockRequest request, CancellationToken cancellationToken = default)
     {
         await _dbContext.BlockRequests.AddAsync(request, cancellationToken);
+    }
+
+    public async Task<PagedResult<BlockRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.BlockRequests.Where(br => br.TenantId == tenantId);
+
+        if (status.HasValue)
+            query = query.Where(br => br.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(br => br.RequestNote != null && br.RequestNote.Contains(search));
+
+        query = query.OrderByDescending(br => br.CreatedAt);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetWorkSessions;
 
-public class GetWorkSessionsQueryHandler : IRequestHandler<GetWorkSessionsQuery, IReadOnlyList<WorkSessionDto>>
+public class GetWorkSessionsQueryHandler : IRequestHandler<GetWorkSessionsQuery, PagedResult<WorkSessionDto>>
 {
     private readonly IWorkSessionRepository _workSessionRepository;
 
@@ -13,18 +15,12 @@ public class GetWorkSessionsQueryHandler : IRequestHandler<GetWorkSessionsQuery,
         _workSessionRepository = workSessionRepository;
     }
 
-    public async Task<IReadOnlyList<WorkSessionDto>> Handle(GetWorkSessionsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<WorkSessionDto>> Handle(GetWorkSessionsQuery request, CancellationToken cancellationToken)
     {
-        var sessions = await _workSessionRepository.GetByTenantAndDateAsync(request.TenantId, request.Date, cancellationToken);
+        var result = await _workSessionRepository.GetPagedAsync(
+            request.TenantId, request.Date, request.UserId,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return sessions.Select(s => new WorkSessionDto(
-            s.Id,
-            s.ProcessId,
-            s.UserId,
-            s.CheckInTime,
-            s.CheckOutTime,
-            s.DurationMinutes,
-            s.Date,
-            s.IsActive)).ToList();
+        return result.MapItems(s => s.Adapt<WorkSessionDto>());
     }
 }

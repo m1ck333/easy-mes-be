@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetOrders;
 
-public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, IReadOnlyList<OrderDto>>
+public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult<OrderDto>>
 {
     private readonly IOrderRepository _orderRepository;
 
@@ -13,21 +15,13 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, IReadOnlyLi
         _orderRepository = orderRepository;
     }
 
-    public async Task<IReadOnlyList<OrderDto>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<OrderDto>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
     {
-        var orders = await _orderRepository.GetByTenantIdAsync(request.TenantId, request.Status, cancellationToken);
+        var result = await _orderRepository.GetPagedAsync(
+            request.TenantId, request.Status, request.OrderType,
+            request.DateFrom, request.DateTo, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return orders.Select(o => new OrderDto(
-            o.Id,
-            o.TenantId,
-            o.OrderNumber,
-            o.DeliveryDate,
-            o.Priority,
-            o.OrderType,
-            o.Status,
-            o.Notes,
-            o.CustomWarningDays,
-            o.CustomCriticalDays,
-            o.Items.Count)).ToList();
+        return result.MapItems(o => o.Adapt<OrderDto>());
     }
 }

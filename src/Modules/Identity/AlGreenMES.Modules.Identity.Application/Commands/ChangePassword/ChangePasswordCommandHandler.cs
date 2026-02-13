@@ -25,7 +25,7 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
     public async Task<Unit> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken)
-            ?? throw new DomainException("USER_NOT_FOUND", $"User with id '{request.UserId}' was not found.");
+            ?? throw new NotFoundException("User", request.UserId);
 
         if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
             throw new DomainException("INVALID_CURRENT_PASSWORD", "The current password is incorrect.");

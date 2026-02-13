@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Identity.Application.Interfaces;
 using AlGreenMES.Modules.Identity.Application.Services;
 using AlGreenMES.Modules.Identity.Domain.Entities;
 using AlGreenMES.Modules.Identity.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Identity.Application.Commands.CreateUser;
@@ -43,18 +44,6 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserD
         await _userRepository.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new UserDto(
-            user.Id,
-            user.TenantId,
-            user.Email,
-            user.FirstName,
-            user.LastName,
-            user.FullName,
-            user.Role,
-            user.ProcessId,
-            user.CanIncludeWithdrawnInAnalysis,
-            user.IsActive,
-            user.CreatedAt,
-            user.UpdatedAt);
+        return user.Adapt<UserDto>();
     }
 }

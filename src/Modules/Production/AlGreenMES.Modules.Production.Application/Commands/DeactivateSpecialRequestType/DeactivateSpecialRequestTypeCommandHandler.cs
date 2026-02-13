@@ -19,7 +19,7 @@ public class DeactivateSpecialRequestTypeCommandHandler : IRequestHandler<Deacti
     public async Task<Unit> Handle(DeactivateSpecialRequestTypeCommand request, CancellationToken cancellationToken)
     {
         var srt = await _repository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new DomainException("SRT_NOT_FOUND", $"Special request type with id '{request.Id}' was not found.");
+            ?? throw new NotFoundException("SpecialRequestType", request.Id);
 
         srt.Deactivate();
         await _unitOfWork.SaveChangesAsync(cancellationToken);

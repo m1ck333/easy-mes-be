@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Production.Application.DTOs;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Queries.GetProcesses;
 
-public class GetProcessesQueryHandler : IRequestHandler<GetProcessesQuery, IReadOnlyList<ProcessDto>>
+public class GetProcessesQueryHandler : IRequestHandler<GetProcessesQuery, PagedResult<ProcessDto>>
 {
     private readonly IProcessRepository _processRepository;
 
@@ -13,13 +15,12 @@ public class GetProcessesQueryHandler : IRequestHandler<GetProcessesQuery, IRead
         _processRepository = processRepository;
     }
 
-    public async Task<IReadOnlyList<ProcessDto>> Handle(GetProcessesQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<ProcessDto>> Handle(GetProcessesQuery request, CancellationToken cancellationToken)
     {
-        var processes = await _processRepository.GetByTenantIdAsync(request.TenantId, cancellationToken);
+        var result = await _processRepository.GetPagedAsync(
+            request.TenantId, request.IsActive, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return processes.Select(p => new ProcessDto(
-            p.Id, p.TenantId, p.Code, p.Name, p.SequenceOrder, p.IsActive,
-            p.SubProcesses.Select(sp => new SubProcessDto(sp.Id, sp.ProcessId, sp.Name, sp.SequenceOrder, sp.IsActive)).ToList()
-        )).ToList();
+        return result.MapItems(p => p.Adapt<ProcessDto>());
     }
 }

@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Tenancy.Application.DTOs;
 using AlGreenMES.Modules.Tenancy.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Tenancy.Application.Queries.GetTenantSettings;
 
-public class GetTenantSettingsQueryHandler : IRequestHandler<GetTenantSettingsQuery, TenantSettingsDto?>
+public class GetTenantSettingsQueryHandler : IRequestHandler<GetTenantSettingsQuery, TenantSettingsDto>
 {
     private readonly ITenantRepository _tenantRepository;
 
@@ -13,18 +15,14 @@ public class GetTenantSettingsQueryHandler : IRequestHandler<GetTenantSettingsQu
         _tenantRepository = tenantRepository;
     }
 
-    public async Task<TenantSettingsDto?> Handle(GetTenantSettingsQuery request, CancellationToken cancellationToken)
+    public async Task<TenantSettingsDto> Handle(GetTenantSettingsQuery request, CancellationToken cancellationToken)
     {
-        var tenant = await _tenantRepository.GetByIdAsync(request.TenantId, cancellationToken);
-        if (tenant?.Settings is null)
-            return null;
+        var tenant = await _tenantRepository.GetByIdAsync(request.TenantId, cancellationToken)
+            ?? throw new NotFoundException("Tenant", request.TenantId);
 
-        return new TenantSettingsDto(
-            tenant.Settings.Id,
-            tenant.Settings.TenantId,
-            tenant.Settings.DefaultWarningDays,
-            tenant.Settings.DefaultCriticalDays,
-            tenant.Settings.WarningColor,
-            tenant.Settings.CriticalColor);
+        if (tenant.Settings is null)
+            throw new NotFoundException("TenantSettings", request.TenantId);
+
+        return tenant.Settings.Adapt<TenantSettingsDto>();
     }
 }

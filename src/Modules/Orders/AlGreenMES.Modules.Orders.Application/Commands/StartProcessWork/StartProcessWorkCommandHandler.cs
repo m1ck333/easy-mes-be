@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.StartProcessWork;
@@ -31,7 +32,7 @@ public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCo
     {
         var process = await _processRepository.GetByIdWithFullDetailsAsync(request.OrderItemProcessId, cancellationToken);
         if (process == null)
-            throw new DomainException("PROCESS_NOT_FOUND", $"Order item process with id '{request.OrderItemProcessId}' was not found.");
+            throw new NotFoundException("OrderItemProcess", request.OrderItemProcessId);
 
         if (process.OrderItem.Order.Status != OrderStatus.Active)
             throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active to start work.");
@@ -71,28 +72,6 @@ public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCo
                 process.OrderItem.Order.OrderNumber,
                 process.TenantId), cancellationToken);
 
-        return MapToDto(process);
-    }
-
-    private static OrderItemProcessDto MapToDto(Domain.Entities.OrderItemProcess process)
-    {
-        return new OrderItemProcessDto(
-            process.Id,
-            process.OrderItemId,
-            process.ProcessId,
-            process.Complexity,
-            process.ComplexityOverridden,
-            process.Status,
-            process.StartedAt,
-            process.CompletedAt,
-            process.TotalDurationMinutes,
-            process.IsWithdrawn,
-            process.SubProcesses.Select(sp => new OrderItemSubProcessDto(
-                sp.Id,
-                sp.OrderItemProcessId,
-                sp.SubProcessId,
-                sp.Status,
-                sp.TotalDurationMinutes,
-                sp.IsWithdrawn)).ToList());
+        return process.Adapt<OrderItemProcessDto>();
     }
 }

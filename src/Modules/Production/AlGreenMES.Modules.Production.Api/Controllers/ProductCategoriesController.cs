@@ -27,9 +27,22 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetProductCategories([FromQuery] Guid tenantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProductCategories(
+        [FromQuery] Guid tenantId,
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProductCategoriesQuery(tenantId), cancellationToken);
+        var result = await _mediator.Send(new GetProductCategoriesQuery
+        {
+            TenantId = tenantId,
+            IsActive = isActive,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
         return Ok(result);
     }
 
@@ -37,7 +50,6 @@ public class ProductCategoriesController : ControllerBase
     public async Task<IActionResult> GetProductCategoryById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetProductCategoryByIdQuery(id), cancellationToken);
-        if (result is null) return NotFound();
         return Ok(result);
     }
 

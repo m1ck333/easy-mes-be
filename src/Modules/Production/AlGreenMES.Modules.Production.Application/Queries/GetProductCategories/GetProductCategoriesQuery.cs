@@ -1,6 +1,10 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Production.Application.DTOs;
-using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Queries.GetProductCategories;
 
-public record GetProductCategoriesQuery(Guid TenantId) : IRequest<IReadOnlyList<ProductCategoryDto>>;
+public record GetProductCategoriesQuery : PagedQuery<PagedResult<ProductCategoryDto>>
+{
+    public Guid TenantId { get; init; }
+    public bool? IsActive { get; init; }
+}

@@ -21,18 +21,18 @@ public class RemoveSpecialRequestCommandHandler : IRequestHandler<RemoveSpecialR
     {
         var order = await _orderRepository.GetByIdWithFullDetailsAsync(request.OrderId, cancellationToken);
         if (order == null)
-            throw new DomainException("ORDER_NOT_FOUND", $"Order with id '{request.OrderId}' was not found.");
+            throw new NotFoundException("Order", request.OrderId);
 
         if (order.Status != OrderStatus.Draft)
             throw new DomainException("ORDER_NOT_DRAFT", "Can only remove special requests from draft orders.");
 
         var item = order.Items.FirstOrDefault(i => i.Id == request.OrderItemId);
         if (item == null)
-            throw new DomainException("ITEM_NOT_FOUND", $"Order item with id '{request.OrderItemId}' was not found.");
+            throw new NotFoundException("OrderItem", request.OrderItemId);
 
         var specialRequest = item.SpecialRequests.FirstOrDefault(sr => sr.Id == request.SpecialRequestId);
         if (specialRequest == null)
-            throw new DomainException("SPECIAL_REQUEST_NOT_FOUND", $"Special request with id '{request.SpecialRequestId}' was not found.");
+            throw new NotFoundException("SpecialRequest", request.SpecialRequestId);
 
         item.RemoveSpecialRequest(specialRequest.SpecialRequestTypeId);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

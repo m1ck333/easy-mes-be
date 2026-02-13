@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Production.Application.DTOs;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Queries.GetProductCategoryById;
 
-public class GetProductCategoryByIdQueryHandler : IRequestHandler<GetProductCategoryByIdQuery, ProductCategoryDetailDto?>
+public class GetProductCategoryByIdQueryHandler : IRequestHandler<GetProductCategoryByIdQuery, ProductCategoryDetailDto>
 {
     private readonly IProductCategoryRepository _categoryRepository;
 
@@ -13,14 +15,11 @@ public class GetProductCategoryByIdQueryHandler : IRequestHandler<GetProductCate
         _categoryRepository = categoryRepository;
     }
 
-    public async Task<ProductCategoryDetailDto?> Handle(GetProductCategoryByIdQuery request, CancellationToken cancellationToken)
+    public async Task<ProductCategoryDetailDto> Handle(GetProductCategoryByIdQuery request, CancellationToken cancellationToken)
     {
-        var category = await _categoryRepository.GetByIdWithDetailsAsync(request.Id, cancellationToken);
-        if (category is null) return null;
+        var category = await _categoryRepository.GetByIdWithDetailsAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("ProductCategory", request.Id);
 
-        return new ProductCategoryDetailDto(
-            category.Id, category.TenantId, category.Name, category.Description, category.IsActive,
-            category.Processes.Select(p => new ProductCategoryProcessDto(p.Id, p.ProcessId, p.Process?.Code, p.Process?.Name, p.DefaultComplexity, p.SequenceOrder)).ToList(),
-            category.Dependencies.Select(d => new ProductCategoryDependencyDto(d.Id, d.ProcessId, d.Process?.Code, d.DependsOnProcessId, d.DependsOnProcess?.Code)).ToList());
+        return category.Adapt<ProductCategoryDetailDto>();
     }
 }

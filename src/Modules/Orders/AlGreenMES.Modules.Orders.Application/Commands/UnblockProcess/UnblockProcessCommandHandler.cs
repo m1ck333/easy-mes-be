@@ -23,7 +23,7 @@ public class UnblockProcessCommandHandler : IRequestHandler<UnblockProcessComman
     {
         var process = await _orderItemProcessRepository.GetByIdWithOrderDetailsAsync(request.OrderItemProcessId, cancellationToken);
         if (process == null)
-            throw new DomainException("PROCESS_NOT_FOUND", $"Order item process with id '{request.OrderItemProcessId}' was not found.");
+            throw new NotFoundException("OrderItemProcess", request.OrderItemProcessId);
 
         process.Unblock(request.UserId);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

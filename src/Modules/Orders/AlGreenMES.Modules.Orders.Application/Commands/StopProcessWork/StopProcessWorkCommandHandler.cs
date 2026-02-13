@@ -26,7 +26,7 @@ public class StopProcessWorkCommandHandler : IRequestHandler<StopProcessWorkComm
     {
         var process = await _processRepository.GetByIdWithFullDetailsAsync(request.OrderItemProcessId, cancellationToken);
         if (process == null)
-            throw new DomainException("PROCESS_NOT_FOUND", $"Order item process with id '{request.OrderItemProcessId}' was not found.");
+            throw new NotFoundException("OrderItemProcess", request.OrderItemProcessId);
 
         if (process.OrderItem.Order.Status != OrderStatus.Active)
             throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active.");

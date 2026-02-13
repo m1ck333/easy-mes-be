@@ -19,7 +19,7 @@ public class RemoveOrderItemCommandHandler : IRequestHandler<RemoveOrderItemComm
     public async Task<Unit> Handle(RemoveOrderItemCommand request, CancellationToken cancellationToken)
     {
         var order = await _orderRepository.GetByIdWithItemsAsync(request.OrderId, cancellationToken)
-            ?? throw new DomainException("ORDER_NOT_FOUND", $"Order with id '{request.OrderId}' was not found.");
+            ?? throw new NotFoundException("Order", request.OrderId);
 
         order.RemoveItem(request.ItemId);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

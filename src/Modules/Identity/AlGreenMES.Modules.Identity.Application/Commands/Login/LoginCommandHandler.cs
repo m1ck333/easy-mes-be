@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Identity.Application.DTOs;
 using AlGreenMES.Modules.Identity.Application.Interfaces;
 using AlGreenMES.Modules.Identity.Application.Services;
 using AlGreenMES.Modules.Identity.Domain.Repositories;
+using Mapster;
 using RefreshTokenEntity = AlGreenMES.Modules.Identity.Domain.Entities.RefreshToken;
 using MediatR;
 
@@ -36,7 +37,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
     public async Task<LoginResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var tenant = await _tenantLookupService.GetTenantByCodeAsync(request.TenantCode, cancellationToken)
-            ?? throw new DomainException("TENANT_NOT_FOUND", $"Tenant with code '{request.TenantCode}' was not found.");
+            ?? throw new NotFoundException("Tenant", request.TenantCode);
 
         if (!tenant.IsActive)
             throw new DomainException("TENANT_INACTIVE", "The tenant is not active.");
@@ -62,19 +63,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
         await _refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var userDto = new UserDto(
-            user.Id,
-            user.TenantId,
-            user.Email,
-            user.FirstName,
-            user.LastName,
-            user.FullName,
-            user.Role,
-            user.ProcessId,
-            user.CanIncludeWithdrawnInAnalysis,
-            user.IsActive,
-            user.CreatedAt,
-            user.UpdatedAt);
+        var userDto = user.Adapt<UserDto>();
 
         return new LoginResponseDto(token, refreshTokenValue, userDto);
     }

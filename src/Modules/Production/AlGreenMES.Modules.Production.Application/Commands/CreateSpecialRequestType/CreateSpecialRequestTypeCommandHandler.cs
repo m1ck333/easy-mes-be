@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Production.Application.DTOs;
 using AlGreenMES.Modules.Production.Application.Interfaces;
 using AlGreenMES.Modules.Production.Domain.Entities;
 using AlGreenMES.Modules.Production.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Commands.CreateSpecialRequestType;
@@ -35,9 +36,6 @@ public class CreateSpecialRequestTypeCommandHandler : IRequestHandler<CreateSpec
         await _repository.AddAsync(srt, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new SpecialRequestTypeDto(
-            srt.Id, srt.TenantId, srt.Code, srt.Name, srt.Description,
-            srt.AddsProcesses, srt.RemovesProcesses, srt.OnlyProcesses,
-            srt.IgnoresDependencies, srt.IsActive);
+        return srt.Adapt<SpecialRequestTypeDto>();
     }
 }

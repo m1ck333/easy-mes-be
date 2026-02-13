@@ -1,10 +1,12 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Identity.Application.DTOs;
 using AlGreenMES.Modules.Identity.Domain.Repositories;
+using Mapster;
 using MediatR;
 
 namespace AlGreenMES.Modules.Identity.Application.Queries.GetUsers;
 
-public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, IReadOnlyList<UserDto>>
+public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<UserDto>>
 {
     private readonly IUserRepository _userRepository;
 
@@ -13,22 +15,12 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, IReadOnlyList
         _userRepository = userRepository;
     }
 
-    public async Task<IReadOnlyList<UserDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<UserDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var users = await _userRepository.GetByTenantIdAsync(request.TenantId, cancellationToken);
+        var result = await _userRepository.GetPagedAsync(
+            request.TenantId, request.Role, request.IsActive, request.Search,
+            request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return users.Select(u => new UserDto(
-            u.Id,
-            u.TenantId,
-            u.Email,
-            u.FirstName,
-            u.LastName,
-            u.FullName,
-            u.Role,
-            u.ProcessId,
-            u.CanIncludeWithdrawnInAnalysis,
-            u.IsActive,
-            u.CreatedAt,
-            u.UpdatedAt)).ToList();
+        return result.MapItems(u => u.Adapt<UserDto>());
     }
 }

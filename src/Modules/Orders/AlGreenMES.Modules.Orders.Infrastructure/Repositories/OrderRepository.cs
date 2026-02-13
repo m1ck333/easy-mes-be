@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Pagination;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
@@ -76,5 +77,31 @@ public class OrderRepository : IOrderRepository
         var normalized = orderNumber.Trim();
         return await _dbContext.Orders
             .AnyAsync(o => o.OrderNumber == normalized && o.TenantId == tenantId, cancellationToken);
+    }
+
+    public async Task<PagedResult<Order>> GetPagedAsync(Guid tenantId, OrderStatus? status, OrderType? orderType, DateTime? dateFrom, DateTime? dateTo, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Orders
+            .Include(o => o.Items)
+            .Where(o => o.TenantId == tenantId);
+
+        if (status.HasValue)
+            query = query.Where(o => o.Status == status.Value);
+
+        if (orderType.HasValue)
+            query = query.Where(o => o.OrderType == orderType.Value);
+
+        if (dateFrom.HasValue)
+            query = query.Where(o => o.DeliveryDate >= dateFrom.Value);
+
+        if (dateTo.HasValue)
+            query = query.Where(o => o.DeliveryDate <= dateTo.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(o => o.OrderNumber.Contains(search));
+
+        query = query.OrderBy(o => o.Priority).ThenBy(o => o.DeliveryDate);
+
+        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }
