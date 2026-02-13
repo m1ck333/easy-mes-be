@@ -1,12 +1,17 @@
 using AlGreenMES.Modules.Orders.Api.Requests;
 using AlGreenMES.Modules.Orders.Application.Commands.ActivateOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.AddOrderItem;
+using AlGreenMES.Modules.Orders.Application.Commands.AddSpecialRequest;
 using AlGreenMES.Modules.Orders.Application.Commands.CancelOrder;
+using AlGreenMES.Modules.Orders.Application.Commands.ChangePriority;
 using AlGreenMES.Modules.Orders.Application.Commands.CreateOrder;
+using AlGreenMES.Modules.Orders.Application.Commands.OverrideComplexity;
 using AlGreenMES.Modules.Orders.Application.Commands.PauseOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.RemoveOrderItem;
+using AlGreenMES.Modules.Orders.Application.Commands.RemoveSpecialRequest;
 using AlGreenMES.Modules.Orders.Application.Commands.ResumeOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.UpdateOrder;
+using AlGreenMES.Modules.Orders.Application.Commands.WithdrawOrderToProcess;
 using AlGreenMES.Modules.Orders.Application.Queries.GetOrderById;
 using AlGreenMES.Modules.Orders.Application.Queries.GetOrders;
 using AlGreenMES.Modules.Orders.Domain.Enums;
@@ -110,6 +115,46 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> RemoveOrderItem(Guid orderId, Guid itemId, CancellationToken cancellationToken)
     {
         await _mediator.Send(new RemoveOrderItemCommand(orderId, itemId), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{id:guid}/priority")]
+    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    public async Task<IActionResult> ChangePriority(Guid id, [FromBody] ChangePriorityRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ChangePriorityCommand(id, request.Priority), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/withdraw")]
+    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    public async Task<IActionResult> WithdrawOrderToProcess(Guid id, [FromBody] WithdrawOrderToProcessRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new WithdrawOrderToProcessCommand(id, request.TargetProcessId, request.Reason, request.UserId), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{orderId:guid}/items/{itemId:guid}/special-requests")]
+    [Authorize(Roles = "Admin,Manager,SalesManager")]
+    public async Task<IActionResult> AddSpecialRequest(Guid orderId, Guid itemId, [FromBody] AddSpecialRequestRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new AddSpecialRequestCommand(orderId, itemId, request.SpecialRequestTypeId), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("{orderId:guid}/items/{itemId:guid}/special-requests/{specialRequestId:guid}")]
+    [Authorize(Roles = "Admin,Manager,SalesManager")]
+    public async Task<IActionResult> RemoveSpecialRequest(Guid orderId, Guid itemId, Guid specialRequestId, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new RemoveSpecialRequestCommand(orderId, itemId, specialRequestId), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{orderId:guid}/items/{itemId:guid}/processes/{processId:guid}/complexity")]
+    [Authorize(Roles = "Admin,Manager,SalesManager")]
+    public async Task<IActionResult> OverrideComplexity(Guid orderId, Guid itemId, Guid processId, [FromBody] OverrideComplexityRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new OverrideComplexityCommand(orderId, itemId, processId, request.Complexity), cancellationToken);
         return NoContent();
     }
 }

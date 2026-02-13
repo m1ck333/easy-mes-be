@@ -69,4 +69,20 @@ public class OrderItemSubProcess : TenantEntity
     {
         TotalDurationMinutes += minutes;
     }
+
+    public OrderItemSubProcessLog StartLog(Guid workSessionId)
+    {
+        var openLog = _logs.FirstOrDefault(l => l.EndTime == null);
+        if (openLog != null)
+            throw new DomainException("LOG_ALREADY_OPEN", "There is already an open log entry for this sub-process.");
+
+        var log = OrderItemSubProcessLog.Start(TenantId, Id, workSessionId);
+        _logs.Add(log);
+        return log;
+    }
+
+    public OrderItemSubProcessLog? GetOpenLog()
+    {
+        return _logs.FirstOrDefault(l => l.EndTime == null);
+    }
 }

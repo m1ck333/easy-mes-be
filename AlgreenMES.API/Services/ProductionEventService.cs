@@ -20,6 +20,15 @@ public class ProductionEventService : IProductionEventService
             .SendAsync("OrderActivated", evt, cancellationToken);
     }
 
+    public async Task NotifyProcessStartedAsync(ProcessStartedEvent evt, CancellationToken cancellationToken = default)
+    {
+        await Task.WhenAll(
+            _hubContext.Clients.Group($"tenant-{evt.TenantId}")
+                .SendAsync("ProcessStarted", evt, cancellationToken),
+            _hubContext.Clients.Group($"process-{evt.ProcessId}")
+                .SendAsync("ProcessStarted", evt, cancellationToken));
+    }
+
     public async Task NotifyProcessCompletedAsync(ProcessCompletedEvent evt, CancellationToken cancellationToken = default)
     {
         await Task.WhenAll(

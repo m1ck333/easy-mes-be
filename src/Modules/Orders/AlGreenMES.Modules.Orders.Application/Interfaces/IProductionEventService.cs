@@ -5,6 +5,7 @@ namespace AlGreenMES.Modules.Orders.Application.Interfaces;
 public interface IProductionEventService
 {
     Task NotifyOrderActivatedAsync(OrderActivatedEvent evt, CancellationToken cancellationToken = default);
+    Task NotifyProcessStartedAsync(ProcessStartedEvent evt, CancellationToken cancellationToken = default);
     Task NotifyProcessCompletedAsync(ProcessCompletedEvent evt, CancellationToken cancellationToken = default);
     Task NotifyProcessBlockedAsync(ProcessBlockedEvent evt, CancellationToken cancellationToken = default);
     Task NotifyProcessUnblockedAsync(ProcessUnblockedEvent evt, CancellationToken cancellationToken = default);

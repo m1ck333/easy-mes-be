@@ -23,6 +23,7 @@ public static class OrdersInfrastructureServiceRegistration
 
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderItemProcessRepository, OrderItemProcessRepository>();
+        services.AddScoped<IOrderItemSubProcessRepository, OrderItemSubProcessRepository>();
         services.AddScoped<IWorkSessionRepository, WorkSessionRepository>();
         services.AddScoped<IChangeRequestRepository, ChangeRequestRepository>();
         services.AddScoped<IBlockRequestRepository, BlockRequestRepository>();

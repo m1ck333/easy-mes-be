@@ -59,6 +59,18 @@ public class OrderRepository : IOrderRepository
         await _dbContext.Orders.AddAsync(order, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Order>> GetActiveOrdersWithProcessesAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Orders
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Processes)
+                    .ThenInclude(p => p.SubProcesses)
+            .Where(o => o.TenantId == tenantId && o.Status == OrderStatus.Active)
+            .OrderBy(o => o.Priority)
+            .ThenBy(o => o.DeliveryDate)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<bool> ExistsByOrderNumberAsync(string orderNumber, Guid tenantId, CancellationToken cancellationToken = default)
     {
         var normalized = orderNumber.Trim();

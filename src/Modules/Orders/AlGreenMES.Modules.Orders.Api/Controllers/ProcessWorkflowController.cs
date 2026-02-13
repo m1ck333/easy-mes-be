@@ -1,6 +1,9 @@
 using AlGreenMES.Modules.Orders.Api.Requests;
 using AlGreenMES.Modules.Orders.Application.Commands.BlockProcess;
 using AlGreenMES.Modules.Orders.Application.Commands.CompleteProcess;
+using AlGreenMES.Modules.Orders.Application.Commands.ResumeProcessWork;
+using AlGreenMES.Modules.Orders.Application.Commands.StartProcessWork;
+using AlGreenMES.Modules.Orders.Application.Commands.StopProcessWork;
 using AlGreenMES.Modules.Orders.Application.Commands.UnblockProcess;
 using AlGreenMES.Modules.Orders.Application.Commands.WithdrawProcess;
 using MediatR;
@@ -48,6 +51,27 @@ public class ProcessWorkflowController : ControllerBase
     public async Task<IActionResult> WithdrawProcess(Guid id, [FromBody] WithdrawProcessRequest request, CancellationToken cancellationToken)
     {
         await _mediator.Send(new WithdrawProcessCommand(id, request.UserId, request.Reason), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/start")]
+    public async Task<IActionResult> StartWork(Guid id, [FromBody] StartProcessWorkRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new StartProcessWorkCommand(id, request.UserId), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/stop")]
+    public async Task<IActionResult> StopWork(Guid id, [FromBody] StopProcessWorkRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new StopProcessWorkCommand(id, request.UserId), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/resume")]
+    public async Task<IActionResult> ResumeWork(Guid id, [FromBody] ResumeProcessWorkRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new ResumeProcessWorkCommand(id, request.UserId), cancellationToken);
         return NoContent();
     }
 }

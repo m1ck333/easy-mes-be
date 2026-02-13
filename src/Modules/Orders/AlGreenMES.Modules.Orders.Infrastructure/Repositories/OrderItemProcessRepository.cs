@@ -36,6 +36,16 @@ public class OrderItemProcessRepository : IOrderItemProcessRepository
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
+    public async Task<OrderItemProcess?> GetByIdWithFullDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.OrderItemProcesses
+            .Include(p => p.SubProcesses)
+                .ThenInclude(sp => sp.Logs)
+            .Include(p => p.OrderItem)
+                .ThenInclude(oi => oi.Order)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<OrderItemProcess>> GetByOrderItemIdAsync(Guid orderItemId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.OrderItemProcesses
