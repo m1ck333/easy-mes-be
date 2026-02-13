@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\AlGreenMES.BuildingBlocks.Common\AlGreenMES.BuildingBlocks.Common.csproj" />
+    <ProjectReference Include="..\..\Production\AlGreenMES.Modules.Production.Domain\AlGreenMES.Modules.Production.Domain.csproj" />
   </ItemGroup>
 
 </Project>

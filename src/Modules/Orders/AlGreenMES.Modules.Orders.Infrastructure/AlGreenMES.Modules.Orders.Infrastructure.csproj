@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
   </ItemGroup>
 
@@ -15,6 +17,9 @@
     <ProjectReference Include="..\AlGreenMES.Modules.Orders.Domain\AlGreenMES.Modules.Orders.Domain.csproj" />
     <ProjectReference Include="..\AlGreenMES.Modules.Orders.Application\AlGreenMES.Modules.Orders.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AlGreenMES.BuildingBlocks.Common\AlGreenMES.BuildingBlocks.Common.csproj" />
+    <ProjectReference Include="..\..\Tenancy\AlGreenMES.Modules.Tenancy.Infrastructure\AlGreenMES.Modules.Tenancy.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Identity\AlGreenMES.Modules.Identity.Infrastructure\AlGreenMES.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Production\AlGreenMES.Modules.Production.Infrastructure\AlGreenMES.Modules.Production.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,46 @@
+using AlGreenMES.Modules.Orders.Domain.Entities;
+using AlGreenMES.Modules.Orders.Domain.Repositories;
+using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace AlGreenMES.Modules.Orders.Infrastructure.Repositories;
+
+public class OrderItemProcessRepository : IOrderItemProcessRepository
+{
+    private readonly OrdersDbContext _dbContext;
+
+    public OrderItemProcessRepository(OrdersDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<OrderItemProcess?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.OrderItemProcesses
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
+    public async Task<OrderItemProcess?> GetByIdWithSubProcessesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.OrderItemProcesses
+            .Include(p => p.SubProcesses)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
+    public async Task<OrderItemProcess?> GetByIdWithOrderDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.OrderItemProcesses
+            .Include(p => p.SubProcesses)
+            .Include(p => p.OrderItem)
+                .ThenInclude(oi => oi.Order)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<OrderItemProcess>> GetByOrderItemIdAsync(Guid orderItemId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.OrderItemProcesses
+            .Include(p => p.SubProcesses)
+            .Where(p => p.OrderItemId == orderItemId)
+            .ToListAsync(cancellationToken);
+    }
+}

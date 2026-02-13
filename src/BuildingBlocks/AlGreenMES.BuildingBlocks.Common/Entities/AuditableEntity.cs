@@ -9,8 +9,8 @@ public abstract class AuditableEntity : TenantEntity, IAuditableEntity
 {
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; private set; }
-    public string? CreatedBy { get; private set; }
-    public string? UpdatedBy { get; private set; }
+    public Guid? CreatedByUserId { get; private set; }
+    public Guid? UpdatedByUserId { get; private set; }
 
     protected AuditableEntity()
     {
@@ -20,15 +20,15 @@ public abstract class AuditableEntity : TenantEntity, IAuditableEntity
     {
     }
 
-    public void SetCreatedBy(string userId)
+    public void SetCreated(Guid userId)
     {
-        CreatedBy = userId;
+        CreatedByUserId = userId;
         CreatedAt = DateTime.UtcNow;
     }
 
-    public void SetUpdatedBy(string userId)
+    public void SetUpdated(Guid userId)
     {
-        UpdatedBy = userId;
+        UpdatedByUserId = userId;
         UpdatedAt = DateTime.UtcNow;
     }
 }

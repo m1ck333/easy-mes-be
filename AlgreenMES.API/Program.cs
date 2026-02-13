@@ -1,48 +1,118 @@
+using System.Text;
+using AlgreenMES.API.Middleware;
+using AlgreenMES.API.Services;
+using AlGreenMES.BuildingBlocks.Common.Interfaces;
+using AlGreenMES.Modules.Identity.Api;
+using AlGreenMES.Modules.Orders.Api;
+using AlGreenMES.Modules.Orders.Api.Hubs;
+using AlGreenMES.Modules.Orders.Application.Interfaces;
+using AlGreenMES.Modules.Production.Api;
+using AlGreenMES.Modules.Tenancy.Api;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AlgreenMES.API;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
+        builder.Services.AddControllers();
+        builder.Services.AddOpenApi();
+        builder.Services.AddHttpContextAccessor();
+
+        // JWT Authentication
+        var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+        var secret = jwtSettings["Secret"]!;
+
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+            };
+
+            // Allow JWT token via query string for SignalR
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
+                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    {
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
+                }
+            };
+        });
+
         builder.Services.AddAuthorization();
 
-        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-        builder.Services.AddOpenApi();
+        // Tenant service
+        builder.Services.AddScoped<ITenantService, TenantService>();
+
+        // SignalR event service
+        builder.Services.AddScoped<IProductionEventService, ProductionEventService>();
+
+        // Background services
+        builder.Services.AddHostedService<DeadlineWarningService>();
+
+        // Module registrations
+        builder.Services.AddTenancyModule(builder.Configuration);
+        builder.Services.AddIdentityModule(builder.Configuration);
+        builder.Services.AddProductionModule(builder.Configuration);
+        builder.Services.AddOrdersModule(builder.Configuration);
+
+        // CORS
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.SetIsOriginAllowed(_ => true)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
+            });
+        });
 
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
+        app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
         }
 
         app.UseHttpsRedirection();
-
+        app.UseCors();
+        app.UseAuthentication();
         app.UseAuthorization();
+        app.MapControllers();
+        app.MapHub<ProductionHub>("/hubs/production");
 
-        var summaries = new[]
+        // Seed data in development
+        if (app.Environment.IsDevelopment())
         {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
-        app.MapGet("/weatherforecast", (HttpContext httpContext) =>
-        {
-            var forecast =  Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                {
-                    Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    TemperatureC = Random.Shared.Next(-20, 55),
-                    Summary = summaries[Random.Shared.Next(summaries.Length)]
-                })
-                .ToArray();
-            return forecast;
-        })
-        .WithName("GetWeatherForecast");
+            await DataSeeder.SeedAsync(app.Services);
+        }
 
         app.Run();
     }

@@ -1,0 +1,40 @@
+using AlGreenMES.BuildingBlocks.Common.Entities;
+using AlGreenMES.BuildingBlocks.Common.Exceptions;
+
+namespace AlGreenMES.Modules.Orders.Domain.Entities;
+
+public class OrderItemSubProcessLog : TenantEntity
+{
+    public Guid OrderItemSubProcessId { get; private set; }
+    public Guid WorkSessionId { get; private set; }
+    public DateTime StartTime { get; private set; }
+    public DateTime? EndTime { get; private set; }
+    public int? DurationMinutes { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+
+    public OrderItemSubProcess OrderItemSubProcess { get; private set; } = null!;
+    public WorkSession WorkSession { get; private set; } = null!;
+
+    private OrderItemSubProcessLog()
+    {
+    }
+
+    public static OrderItemSubProcessLog Start(Guid tenantId, Guid orderItemSubProcessId, Guid workSessionId)
+    {
+        return new OrderItemSubProcessLog
+        {
+            TenantId = tenantId,
+            OrderItemSubProcessId = orderItemSubProcessId,
+            WorkSessionId = workSessionId,
+            StartTime = DateTime.UtcNow
+        };
+    }
+
+    public void End()
+    {
+        if (EndTime.HasValue)
+            throw new DomainException("ALREADY_ENDED", "Log already ended.");
+        EndTime = DateTime.UtcNow;
+        DurationMinutes = (int)(EndTime.Value - StartTime).TotalMinutes;
+    }
+}
