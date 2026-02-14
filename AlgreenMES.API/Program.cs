@@ -6,9 +6,14 @@ using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using AlGreenMES.Modules.Identity.Api;
 using AlGreenMES.Modules.Orders.Api;
 using AlGreenMES.Modules.Orders.Api.Hubs;
+using AlGreenMES.Modules.Identity.Infrastructure.Persistence;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
+using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
 using AlGreenMES.Modules.Production.Api;
+using AlGreenMES.Modules.Production.Infrastructure.Persistence;
 using AlGreenMES.Modules.Tenancy.Api;
+using AlGreenMES.Modules.Tenancy.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Mapster;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -119,9 +124,16 @@ public class Program
         app.MapControllers();
         app.MapHub<ProductionHub>("/hubs/production");
 
-        // Seed data in development
+        // Auto-migrate and seed data in development
         if (app.Environment.IsDevelopment())
         {
+            using var migrationScope = app.Services.CreateScope();
+            var sp = migrationScope.ServiceProvider;
+            await sp.GetRequiredService<TenancyDbContext>().Database.MigrateAsync();
+            await sp.GetRequiredService<IdentityDbContext>().Database.MigrateAsync();
+            await sp.GetRequiredService<ProductionDbContext>().Database.MigrateAsync();
+            await sp.GetRequiredService<OrdersDbContext>().Database.MigrateAsync();
+
             await DataSeeder.SeedAsync(app.Services);
         }
 

@@ -1,6 +1,9 @@
 using AlGreenMES.Modules.Identity.Application.Services;
 using AlGreenMES.Modules.Identity.Domain.Entities;
 using AlGreenMES.Modules.Identity.Infrastructure.Persistence;
+using AlGreenMES.Modules.Orders.Domain.Entities;
+using AlGreenMES.Modules.Orders.Domain.Enums;
+using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
 using AlGreenMES.Modules.Production.Domain.Entities;
 using AlGreenMES.Modules.Production.Infrastructure.Persistence;
 using AlGreenMES.Modules.Tenancy.Domain.Entities;
@@ -19,6 +22,7 @@ public static class DataSeeder
         var tenancyDb = services.GetRequiredService<TenancyDbContext>();
         var identityDb = services.GetRequiredService<IdentityDbContext>();
         var productionDb = services.GetRequiredService<ProductionDbContext>();
+        var ordersDb = services.GetRequiredService<OrdersDbContext>();
         var passwordHasher = services.GetRequiredService<IPasswordHasher>();
 
         // 1. Get or create Demo Tenant
@@ -143,5 +147,393 @@ public static class DataSeeder
 
             await productionDb.SaveChangesAsync();
         }
+
+        // =====================================================================
+        // NEW SEED DATA
+        // =====================================================================
+
+        // 6. More Users
+        var demoPassword = passwordHasher.HashPassword("Demo123!");
+        var userDefs = new (string Email, string FirstName, string LastName, UserRole Role, string? ProcessCode)[]
+        {
+            ("manager@demo.com", "Marko", "Marković", UserRole.Manager, null),
+            ("sales@demo.com", "Ana", "Anić", UserRole.SalesManager, null),
+            ("coord@demo.com", "Ivan", "Ivić", UserRole.Coordinator, null),
+            ("worker1@demo.com", "Petar", "Petrović", UserRole.Department, "A"),
+            ("worker2@demo.com", "Jovan", "Jovanović", UserRole.Department, "E"),
+            ("worker3@demo.com", "Nikola", "Nikolić", UserRole.Department, "H"),
+            ("worker4@demo.com", "Luka", "Lukić", UserRole.Department, "J"),
+        };
+
+        var userEntities = new Dictionary<string, User> { ["admin@demo.com"] = adminUser };
+
+        foreach (var (email, firstName, lastName, role, processCode) in userDefs)
+        {
+            var user = await identityDb.Users.FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId);
+            if (user == null)
+            {
+                user = User.Create(tenantId, email, demoPassword, firstName, lastName, role);
+                if (processCode != null)
+                {
+                    var process = processEntities.First(p => p.Code == processCode);
+                    user.AssignToProcess(process.Id);
+                }
+                identityDb.Users.Add(user);
+            }
+            userEntities[email] = user;
+        }
+
+        await identityDb.SaveChangesAsync();
+
+        // 7. Shifts
+        var shiftDefs = new (string Name, TimeOnly Start, TimeOnly End)[]
+        {
+            ("Jutarnja smjena", new TimeOnly(6, 0), new TimeOnly(14, 0)),
+            ("Popodnevna smjena", new TimeOnly(14, 0), new TimeOnly(22, 0)),
+            ("Noćna smjena", new TimeOnly(22, 0), new TimeOnly(6, 0)),
+        };
+
+        foreach (var (name, start, end) in shiftDefs)
+        {
+            if (!await identityDb.Shifts.AnyAsync(s => s.Name == name && s.TenantId == tenantId))
+            {
+                var shift = Shift.Create(tenantId, name, start, end);
+                identityDb.Shifts.Add(shift);
+            }
+        }
+
+        await identityDb.SaveChangesAsync();
+
+        // 8. Sub-Processes
+        var processesWithSubs = await productionDb.Processes
+            .Include(p => p.SubProcesses)
+            .Where(p => p.TenantId == tenantId)
+            .ToListAsync();
+
+        var subProcessDefs = new (string ProcessCode, (string Name, int Order)[] Subs)[]
+        {
+            ("E", new[] { ("Predmontaža", 1), ("Finalna montaža", 2) }),
+            ("H", new[] { ("Priprema površine", 1), ("Nanošenje boje", 2), ("Sušenje", 3) }),
+            ("I", new[] { ("Priprema laka", 1), ("Nanošenje laka", 2), ("Sušenje laka", 3) }),
+        };
+
+        var needsSubSave = false;
+        foreach (var (processCode, subs) in subProcessDefs)
+        {
+            var process = processesWithSubs.First(p => p.Code == processCode);
+            foreach (var (subName, subOrder) in subs)
+            {
+                if (!process.SubProcesses.Any(sp => sp.Name == subName))
+                {
+                    process.AddSubProcess(subName, subOrder);
+                    needsSubSave = true;
+                }
+            }
+        }
+
+        if (needsSubSave)
+            await productionDb.SaveChangesAsync();
+
+        // Reload processes with sub-processes to get IDs
+        processesWithSubs = await productionDb.Processes
+            .Include(p => p.SubProcesses)
+            .Where(p => p.TenantId == tenantId)
+            .ToListAsync();
+
+        // 9. More Product Categories
+        // "Vrata Standard" — A, B, D, E, F, G, H, I, J, K (skip C/CNC)
+        var vrataStandard = await productionDb.ProductCategories
+            .Include(c => c.Processes)
+            .Include(c => c.Dependencies)
+            .FirstOrDefaultAsync(c => c.Name == "Vrata Standard" && c.TenantId == tenantId);
+
+        if (vrataStandard == null)
+        {
+            vrataStandard = ProductCategory.Create(tenantId, "Vrata Standard", "Standardna vrata bez CNC-a", adminUser.Id);
+            productionDb.ProductCategories.Add(vrataStandard);
+
+            var standardProcessCodes = new[] { "A", "B", "D", "E", "F", "G", "H", "I", "J", "K" };
+            var seqOrder = 1;
+            foreach (var code in standardProcessCodes)
+            {
+                var process = processEntities.First(p => p.Code == code);
+                vrataStandard.AddProcess(process.Id, seqOrder++);
+            }
+
+            AddSurfaceDependencies(vrataStandard, processEntities);
+            await productionDb.SaveChangesAsync();
+        }
+
+        // "Prozori" — A, B, C, F, G, H, I, J, K
+        var prozori = await productionDb.ProductCategories
+            .Include(c => c.Processes)
+            .Include(c => c.Dependencies)
+            .FirstOrDefaultAsync(c => c.Name == "Prozori" && c.TenantId == tenantId);
+
+        if (prozori == null)
+        {
+            prozori = ProductCategory.Create(tenantId, "Prozori", "Prozori - standardna kategorija", adminUser.Id);
+            productionDb.ProductCategories.Add(prozori);
+
+            var prozoriProcessCodes = new[] { "A", "B", "C", "F", "G", "H", "I", "J", "K" };
+            var seqOrder = 1;
+            foreach (var code in prozoriProcessCodes)
+            {
+                var process = processEntities.First(p => p.Code == code);
+                prozori.AddProcess(process.Id, seqOrder++);
+            }
+
+            AddSurfaceDependencies(prozori, processEntities);
+            await productionDb.SaveChangesAsync();
+        }
+
+        // =====================================================================
+        // 10. Orders with Items, Processes, Sub-Processes, and State Progression
+        // =====================================================================
+
+        if (await ordersDb.Orders.AnyAsync(o => o.OrderNumber == "ORD-2026-001" && o.TenantId == tenantId))
+            return; // Orders already seeded — skip the rest
+
+        // Reload all categories with their processes for order item creation
+        var allCategories = await productionDb.ProductCategories
+            .Include(c => c.Processes)
+            .Where(c => c.TenantId == tenantId)
+            .ToListAsync();
+
+        var catPivot = allCategories.First(c => c.Name == "Vrata Pivot");
+        var catStandard = allCategories.First(c => c.Name == "Vrata Standard");
+        var catProzori = allCategories.First(c => c.Name == "Prozori");
+
+        // Helper: add processes and sub-processes to an order item based on its category
+        void AddProcessesAndSubProcesses(OrderItem item, ProductCategory category)
+        {
+            foreach (var catProc in category.Processes.OrderBy(cp => cp.SequenceOrder))
+            {
+                var oip = item.AddProcess(catProc.ProcessId, catProc.DefaultComplexity);
+                // Add sub-processes if the production process has any
+                var prodProcess = processesWithSubs.FirstOrDefault(p => p.Id == catProc.ProcessId);
+                if (prodProcess != null)
+                {
+                    foreach (var sub in prodProcess.SubProcesses.Where(s => s.IsActive).OrderBy(s => s.SequenceOrder))
+                    {
+                        oip.AddSubProcess(sub.Id);
+                    }
+                }
+            }
+        }
+
+        // Helper: complete a process (start, complete sub-processes, then complete)
+        void CompleteProcess(OrderItemProcess oip)
+        {
+            if (oip.Status == ProcessStatus.Pending)
+                oip.Start();
+            foreach (var sp in oip.SubProcesses)
+            {
+                if (sp.Status == SubProcessStatus.Pending) sp.Start();
+                if (sp.Status == SubProcessStatus.InProgress) sp.Complete();
+            }
+            oip.Complete();
+        }
+
+        // --- ORD-2026-001: Standard, Priority 1, +14 days, Active ---
+        // 2 items of Vrata Pivot; item1 process A started; item2 process A completed, B started
+        var order1 = Order.Create(tenantId, "ORD-2026-001", DateTime.UtcNow.AddDays(14),
+            1, OrderType.Standard, adminUser.Id, "Prva narudžba - pivot vrata");
+        var item1_1 = order1.AddItem(catPivot.Id, "Vrata Pivot", 2, "Stavka 1");
+        AddProcessesAndSubProcesses(item1_1, catPivot);
+        var item1_2 = order1.AddItem(catPivot.Id, "Vrata Pivot", 2, "Stavka 2");
+        AddProcessesAndSubProcesses(item1_2, catPivot);
+        ordersDb.Orders.Add(order1);
+
+        order1.Activate();
+
+        // Item 1: process A InProgress
+        var item1_1_procA = item1_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == "A").Id);
+        item1_1_procA.Start();
+
+        // Item 2: process A completed, process B started
+        var item1_2_procA = item1_2.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == "A").Id);
+        CompleteProcess(item1_2_procA);
+        var item1_2_procB = item1_2.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == "B").Id);
+        item1_2_procB.Start();
+
+        await ordersDb.SaveChangesAsync();
+
+        // --- ORD-2026-002: Standard, Priority 2, +21 days, Draft ---
+        var order2 = Order.Create(tenantId, "ORD-2026-002", DateTime.UtcNow.AddDays(21),
+            2, OrderType.Standard, adminUser.Id, "Druga narudžba - standardna vrata");
+        var item2_1 = order2.AddItem(catStandard.Id, "Vrata Standard", 1);
+        AddProcessesAndSubProcesses(item2_1, catStandard);
+        ordersDb.Orders.Add(order2);
+        await ordersDb.SaveChangesAsync();
+
+        // --- ORD-2026-003: Repair, Priority 1, +7 days, Active ---
+        // Prozori; processes A,B,C completed; F InProgress
+        var order3 = Order.Create(tenantId, "ORD-2026-003", DateTime.UtcNow.AddDays(7),
+            1, OrderType.Repair, adminUser.Id, "Popravka prozora");
+        var item3_1 = order3.AddItem(catProzori.Id, "Prozori", 1);
+        AddProcessesAndSubProcesses(item3_1, catProzori);
+        ordersDb.Orders.Add(order3);
+
+        order3.Activate();
+
+        // Complete A, B, C
+        var prozoriCodes = new[] { "A", "B", "C" };
+        foreach (var code in prozoriCodes)
+        {
+            var proc = item3_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == code).Id);
+            CompleteProcess(proc);
+        }
+
+        // Start F (InProgress)
+        var item3_1_procF = item3_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == "F").Id);
+        item3_1_procF.Start();
+
+        await ordersDb.SaveChangesAsync();
+
+        // --- ORD-2026-004: Standard, Priority 3, +30 days, Paused ---
+        var order4 = Order.Create(tenantId, "ORD-2026-004", DateTime.UtcNow.AddDays(30),
+            3, OrderType.Standard, adminUser.Id, "Narudžba na čekanju");
+        var item4_1 = order4.AddItem(catPivot.Id, "Vrata Pivot", 1);
+        AddProcessesAndSubProcesses(item4_1, catPivot);
+        ordersDb.Orders.Add(order4);
+
+        order4.Activate();
+        order4.Pause();
+
+        await ordersDb.SaveChangesAsync();
+
+        // --- ORD-2026-005: Complaint, Priority 2, Completed ---
+        // Create with future date (domain validates), then complete all processes
+        var order5 = Order.Create(tenantId, "ORD-2026-005", DateTime.UtcNow.AddDays(1),
+            2, OrderType.Complaint, adminUser.Id, "Reklamacija - završena");
+        var item5_1 = order5.AddItem(catStandard.Id, "Vrata Standard", 1);
+        AddProcessesAndSubProcesses(item5_1, catStandard);
+        ordersDb.Orders.Add(order5);
+
+        order5.Activate();
+
+        // Complete ALL processes
+        foreach (var proc in item5_1.Processes)
+        {
+            CompleteProcess(proc);
+        }
+
+        order5.MarkCompleted();
+        await ordersDb.SaveChangesAsync();
+
+        // =====================================================================
+        // 11. Work Sessions
+        // =====================================================================
+
+        var worker1 = userEntities["worker1@demo.com"];
+        var worker2 = userEntities["worker2@demo.com"];
+        var worker3 = userEntities["worker3@demo.com"];
+        var manager = userEntities["manager@demo.com"];
+        var sales = userEntities["sales@demo.com"];
+        var coord = userEntities["coord@demo.com"];
+
+        var processA = processEntities.First(p => p.Code == "A");
+        var processE = processEntities.First(p => p.Code == "E");
+        var processH = processEntities.First(p => p.Code == "H");
+
+        // Worker1 (Petar) on process A — checked out
+        var ws1 = WorkSession.CheckIn(tenantId, processA.Id, worker1.Id);
+        ws1.CheckOut();
+        ordersDb.WorkSessions.Add(ws1);
+
+        // Worker2 (Jovan) on process E — still active
+        var ws2 = WorkSession.CheckIn(tenantId, processE.Id, worker2.Id);
+        ordersDb.WorkSessions.Add(ws2);
+
+        // Worker3 (Nikola) on process H — checked out
+        var ws3 = WorkSession.CheckIn(tenantId, processH.Id, worker3.Id);
+        ws3.CheckOut();
+        ordersDb.WorkSessions.Add(ws3);
+
+        await ordersDb.SaveChangesAsync();
+
+        // =====================================================================
+        // 12. Block Requests
+        // =====================================================================
+
+        // Block request 1: ORD-2026-001, item 1, process B (Pending) — Pending block request
+        var item1_1_procB = item1_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == "B").Id);
+        var blockReq1 = BlockRequest.CreateForProcess(tenantId, item1_1_procB.Id,
+            worker1.Id, "Nedostaje materijal za kantiranje");
+        ordersDb.BlockRequests.Add(blockReq1);
+
+        // Block request 2: ORD-2026-003, item 1, process F (InProgress) — Approved, process blocked
+        var blockReq2 = BlockRequest.CreateForProcess(tenantId, item3_1_procF.Id,
+            worker3.Id, "Stroj za brušenje u kvaru");
+        blockReq2.Approve(manager.Id, "Odobreno - čeka se popravka stroja");
+        item3_1_procF.Block(manager.Id, "Stroj za brušenje u kvaru");
+        ordersDb.BlockRequests.Add(blockReq2);
+
+        await ordersDb.SaveChangesAsync();
+
+        // =====================================================================
+        // 13. Change Requests
+        // =====================================================================
+
+        // PriorityChange on ORD-2026-001 — Pending
+        var changeReq1 = ChangeRequest.Create(tenantId, order1.Id, sales.Id,
+            ChangeRequestType.PriorityChange, "Kupac traži hitnu isporuku - povećati prioritet");
+        ordersDb.ChangeRequests.Add(changeReq1);
+
+        // Resume on ORD-2026-004 — Approved by admin
+        var changeReq2 = ChangeRequest.Create(tenantId, order4.Id, manager.Id,
+            ChangeRequestType.Resume, "Materijal stigao - nastaviti proizvodnju");
+        changeReq2.Approve(adminUser.Id, "Odobreno");
+        ordersDb.ChangeRequests.Add(changeReq2);
+
+        // Cancel on ORD-2026-002 — Rejected by admin
+        var changeReq3 = ChangeRequest.Create(tenantId, order2.Id, coord.Id,
+            ChangeRequestType.Cancel, "Kupac želi otkazati narudžbu");
+        changeReq3.Reject(adminUser.Id, "Odbijeno - narudžba je već u pripremi");
+        ordersDb.ChangeRequests.Add(changeReq3);
+
+        await ordersDb.SaveChangesAsync();
+
+        // =====================================================================
+        // 14. Notifications
+        // =====================================================================
+
+        var notif1 = Notification.Create(tenantId, manager.Id, NotificationType.DeadlineWarning,
+            "Rok isporuke blizu", "Narudžba ORD-2026-003 ima rok isporuke za 7 dana.",
+            "Order", order3.Id);
+        ordersDb.Notifications.Add(notif1);
+
+        var notif2 = Notification.Create(tenantId, manager.Id, NotificationType.BlockRequest,
+            "Zahtjev za blokadu", "Novi zahtjev za blokadu procesa brušenja na ORD-2026-003.",
+            "BlockRequest", blockReq2.Id);
+        ordersDb.Notifications.Add(notif2);
+
+        var notif3 = Notification.Create(tenantId, adminUser.Id, NotificationType.DeadlineCritical,
+            "Kritičan rok", "Narudžba ORD-2026-005 ima istekao rok isporuke!",
+            "Order", order5.Id);
+        ordersDb.Notifications.Add(notif3);
+
+        var notif4 = Notification.Create(tenantId, worker1.Id, NotificationType.ProcessCompleted,
+            "Proces završen", "Proces krojenja je uspješno završen na stavci narudžbe ORD-2026-001.",
+            "OrderItemProcess", item1_2_procA.Id);
+        ordersDb.Notifications.Add(notif4);
+
+        await ordersDb.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Adds standard surface treatment dependencies: G→F, H→G, I→H
+    /// </summary>
+    private static void AddSurfaceDependencies(ProductCategory category, List<Process> processEntities)
+    {
+        var brusenje = processEntities.First(p => p.Code == "F");
+        var grundiranje = processEntities.First(p => p.Code == "G");
+        var farbanje = processEntities.First(p => p.Code == "H");
+        var lakiranje = processEntities.First(p => p.Code == "I");
+
+        category.AddDependency(grundiranje.Id, brusenje.Id);
+        category.AddDependency(farbanje.Id, grundiranje.Id);
+        category.AddDependency(lakiranje.Id, farbanje.Id);
     }
 }
