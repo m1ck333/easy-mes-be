@@ -30,13 +30,17 @@ public class DeadlineWarningService : BackgroundService
             try
             {
                 await CheckDeadlinesAsync(stoppingToken);
+                await Task.Delay(_checkInterval, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // Graceful shutdown — exit the loop silently
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking deadlines.");
+                await Task.Delay(TimeSpan.FromMinutes(1), CancellationToken.None);
             }
-
-            await Task.Delay(_checkInterval, stoppingToken);
         }
     }
 
