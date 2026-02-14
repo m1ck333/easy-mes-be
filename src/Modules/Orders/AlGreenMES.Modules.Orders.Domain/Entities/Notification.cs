@@ -38,4 +38,9 @@ public class Notification : TenantEntity
     {
         IsRead = true;
     }
+
+    public void MarkUnread()
+    {
+        IsRead = false;
+    }
 }

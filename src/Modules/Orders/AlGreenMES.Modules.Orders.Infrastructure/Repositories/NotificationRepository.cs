@@ -40,6 +40,18 @@ public class NotificationRepository : INotificationRepository
         await _dbContext.Notifications.AddAsync(notification, cancellationToken);
     }
 
+    public void Delete(Notification notification)
+    {
+        _dbContext.Notifications.Remove(notification);
+    }
+
+    public async Task DeleteAllByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Notifications
+            .Where(n => n.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     public async Task MarkAllReadAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         await _dbContext.Notifications
