@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using AlGreenMES.Modules.Orders.Api.Requests;
 using AlGreenMES.Modules.Orders.Application.Commands.ActivateOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.AddOrderItem;
@@ -70,8 +72,12 @@ public class OrdersController : ControllerBase
     [Authorize(Roles = "Admin,Manager,SalesManager")]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request, CancellationToken cancellationToken)
     {
+        var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? throw new UnauthorizedAccessException("User ID claim not found in token."));
+
         var result = await _mediator.Send(
-            new CreateOrderCommand(request.TenantId, request.OrderNumber, request.DeliveryDate, request.Priority, request.OrderType, Guid.Empty, request.Notes),
+            new CreateOrderCommand(request.TenantId, request.OrderNumber, request.DeliveryDate, request.Priority, request.OrderType, userId, request.Notes),
             cancellationToken);
         return CreatedAtAction(nameof(GetOrderById), new { id = result.Id }, result);
     }
