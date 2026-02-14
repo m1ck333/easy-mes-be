@@ -225,7 +225,8 @@ public static class DataSeeder
             {
                 if (!process.SubProcesses.Any(sp => sp.Name == subName))
                 {
-                    process.AddSubProcess(subName, subOrder);
+                    var subProcess = process.AddSubProcess(subName, subOrder);
+                    productionDb.SubProcesses.Add(subProcess);
                     needsSubSave = true;
                 }
             }
