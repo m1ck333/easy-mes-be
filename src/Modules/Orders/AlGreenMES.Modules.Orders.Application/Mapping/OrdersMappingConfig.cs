@@ -36,7 +36,10 @@ public static class OrdersMappingConfig
             .Map(dest => dest.Priority, src => src.OrderItem.Order.Priority)
             .Map(dest => dest.DeliveryDate, src => src.OrderItem.Order.DeliveryDate)
             .Map(dest => dest.ProductName, src => src.OrderItem.ProductName)
-            .Map(dest => dest.Quantity, src => src.OrderItem.Quantity);
+            .Map(dest => dest.Quantity, src => src.OrderItem.Quantity)
+            .Map(dest => dest.SpecialRequestNames, src => new List<string>())
+            .Map(dest => dest.CompletedProcessCount, src => 0)
+            .Map(dest => dest.TotalProcessCount, src => 0);
 
         config.NewConfig<OrderItemProcess, TabletActiveWorkDto>()
             .Map(dest => dest.OrderItemProcessId, src => src.Id)
@@ -46,6 +49,9 @@ public static class OrdersMappingConfig
             .Map(dest => dest.DeliveryDate, src => src.OrderItem.Order.DeliveryDate)
             .Map(dest => dest.ProductName, src => src.OrderItem.ProductName)
             .Map(dest => dest.Quantity, src => src.OrderItem.Quantity)
+            .Map(dest => dest.SpecialRequestNames, src => new List<string>())
+            .Map(dest => dest.CompletedProcessCount, src => 0)
+            .Map(dest => dest.TotalProcessCount, src => 0)
             .Map(dest => dest.SubProcesses, src => src.SubProcesses);
 
         config.NewConfig<OrderItemSubProcess, TabletSubProcessDto>();
@@ -58,6 +64,9 @@ public static class OrdersMappingConfig
             .Map(dest => dest.DeliveryDate, src => src.OrderItem.Order.DeliveryDate)
             .Map(dest => dest.ProductName, src => src.OrderItem.ProductName)
             .Map(dest => dest.Quantity, src => src.OrderItem.Quantity)
+            .Map(dest => dest.SpecialRequestNames, src => new List<string>())
+            .Map(dest => dest.CompletedProcessCount, src => 0)
+            .Map(dest => dest.TotalProcessCount, src => 0)
             .Map(dest => dest.BlockingProcesses, src => new List<BlockingProcessDto>());
 
         config.NewConfig<OrderItemProcess, BlockingProcessDto>()

@@ -11,18 +11,24 @@ public class GetTabletIncomingQueryHandler : IRequestHandler<GetTabletIncomingQu
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IProductCategoryRepository _categoryRepository;
+    private readonly ISpecialRequestTypeRepository _specialRequestTypeRepository;
 
     public GetTabletIncomingQueryHandler(
         IOrderRepository orderRepository,
-        IProductCategoryRepository categoryRepository)
+        IProductCategoryRepository categoryRepository,
+        ISpecialRequestTypeRepository specialRequestTypeRepository)
     {
         _orderRepository = orderRepository;
         _categoryRepository = categoryRepository;
+        _specialRequestTypeRepository = specialRequestTypeRepository;
     }
 
     public async Task<IReadOnlyList<TabletIncomingDto>> Handle(GetTabletIncomingQuery request, CancellationToken cancellationToken)
     {
         var orders = await _orderRepository.GetActiveOrdersWithProcessesAsync(request.TenantId, cancellationToken);
+
+        var specialRequestTypes = await _specialRequestTypeRepository.GetByTenantIdAsync(request.TenantId, cancellationToken);
+        var srLookup = specialRequestTypes.ToDictionary(s => s.Id, s => s.Name);
 
         var result = new List<TabletIncomingDto>();
 
@@ -32,6 +38,15 @@ public class GetTabletIncomingQueryHandler : IRequestHandler<GetTabletIncomingQu
             {
                 var category = await _categoryRepository.GetByIdWithDetailsAsync(item.ProductCategoryId, cancellationToken);
                 var dependencies = category?.Dependencies ?? [];
+
+                var specialRequestNames = item.SpecialRequests
+                    .Select(sr => srLookup.GetValueOrDefault(sr.SpecialRequestTypeId, ""))
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .ToList();
+
+                var completedCount = item.Processes.Count(p =>
+                    p.Status == ProcessStatus.Completed || p.Status == ProcessStatus.Withdrawn);
+                var totalCount = item.Processes.Count(p => !p.IsWithdrawn);
 
                 foreach (var process in item.Processes)
                 {
@@ -57,7 +72,13 @@ public class GetTabletIncomingQueryHandler : IRequestHandler<GetTabletIncomingQu
 
                     if (blockingProcesses.Count == 0) continue;
 
-                    var dto = process.Adapt<TabletIncomingDto>() with { BlockingProcesses = blockingProcesses };
+                    var dto = process.Adapt<TabletIncomingDto>() with
+                    {
+                        SpecialRequestNames = specialRequestNames,
+                        CompletedProcessCount = completedCount,
+                        TotalProcessCount = totalCount,
+                        BlockingProcesses = blockingProcesses
+                    };
                     result.Add(dto);
                 }
             }

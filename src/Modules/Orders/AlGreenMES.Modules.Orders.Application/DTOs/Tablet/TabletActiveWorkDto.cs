@@ -15,6 +15,9 @@ public record TabletActiveWorkDto(
     ProcessStatus Status,
     DateTime? StartedAt,
     int TotalDurationMinutes,
+    List<string> SpecialRequestNames,
+    int CompletedProcessCount,
+    int TotalProcessCount,
     List<TabletSubProcessDto> SubProcesses);
 
 public record TabletSubProcessDto(

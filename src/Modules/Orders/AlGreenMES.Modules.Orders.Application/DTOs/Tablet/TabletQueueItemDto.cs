@@ -12,4 +12,7 @@ public record TabletQueueItemDto(
     string ProductName,
     int Quantity,
     ComplexityType? Complexity,
-    ProcessStatus Status);
+    ProcessStatus Status,
+    List<string> SpecialRequestNames,
+    int CompletedProcessCount,
+    int TotalProcessCount);

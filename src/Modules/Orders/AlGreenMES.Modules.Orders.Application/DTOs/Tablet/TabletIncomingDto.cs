@@ -13,6 +13,9 @@ public record TabletIncomingDto(
     int Quantity,
     ComplexityType? Complexity,
     ProcessStatus Status,
+    List<string> SpecialRequestNames,
+    int CompletedProcessCount,
+    int TotalProcessCount,
     List<BlockingProcessDto> BlockingProcesses);
 
 public record BlockingProcessDto(

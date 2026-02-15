@@ -66,6 +66,8 @@ public class OrderRepository : IOrderRepository
             .Include(o => o.Items)
                 .ThenInclude(i => i.Processes)
                     .ThenInclude(p => p.SubProcesses)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.SpecialRequests)
             .Where(o => o.TenantId == tenantId && o.Status == OrderStatus.Active)
             .OrderBy(o => o.Priority)
             .ThenBy(o => o.DeliveryDate)
