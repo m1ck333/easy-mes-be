@@ -26,6 +26,10 @@ public class AddCategoryProcessCommandHandler : IRequestHandler<AddCategoryProce
         category.AddProcess(request.ProcessId, request.SequenceOrder, request.DefaultComplexity);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Reload to get navigation properties for the newly added process
+        category = await _categoryRepository.GetByIdWithDetailsAsync(request.CategoryId, cancellationToken)
+            ?? throw new NotFoundException("ProductCategory", request.CategoryId);
+
         return category.Adapt<ProductCategoryDetailDto>();
     }
 }

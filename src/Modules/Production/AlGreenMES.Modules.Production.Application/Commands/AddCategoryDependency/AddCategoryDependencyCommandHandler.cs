@@ -26,6 +26,10 @@ public class AddCategoryDependencyCommandHandler : IRequestHandler<AddCategoryDe
         category.AddDependency(request.ProcessId, request.DependsOnProcessId);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Reload to get navigation properties for the newly added dependency
+        category = await _categoryRepository.GetByIdWithDetailsAsync(request.CategoryId, cancellationToken)
+            ?? throw new NotFoundException("ProductCategory", request.CategoryId);
+
         return category.Adapt<ProductCategoryDetailDto>();
     }
 }
