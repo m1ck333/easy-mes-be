@@ -16,6 +16,7 @@ public class OrdersDbContext : DbContext, IOrdersUnitOfWork
     public DbSet<ChangeRequest> ChangeRequests => Set<ChangeRequest>();
     public DbSet<BlockRequest> BlockRequests => Set<BlockRequest>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     public OrdersDbContext(DbContextOptions<OrdersDbContext> options) : base(options)
     {

@@ -124,8 +124,7 @@ public class Program
         app.MapControllers();
         app.MapHub<ProductionHub>("/hubs/production");
 
-        // Auto-migrate and seed data in development
-        if (app.Environment.IsDevelopment())
+        // Auto-migrate on startup
         {
             using var migrationScope = app.Services.CreateScope();
             var sp = migrationScope.ServiceProvider;
@@ -133,9 +132,10 @@ public class Program
             await sp.GetRequiredService<IdentityDbContext>().Database.MigrateAsync();
             await sp.GetRequiredService<ProductionDbContext>().Database.MigrateAsync();
             await sp.GetRequiredService<OrdersDbContext>().Database.MigrateAsync();
-
-            await DataSeeder.SeedAsync(app.Services);
         }
+
+        // Seed demo data (testing phase — runs in all environments)
+        await DataSeeder.SeedAsync(app.Services);
 
         app.Run();
     }

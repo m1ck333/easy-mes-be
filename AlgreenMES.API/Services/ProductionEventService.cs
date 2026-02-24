@@ -8,16 +8,24 @@ namespace AlgreenMES.API.Services;
 public class ProductionEventService : IProductionEventService
 {
     private readonly IHubContext<ProductionHub> _hubContext;
+    private readonly IWebPushService _webPushService;
 
-    public ProductionEventService(IHubContext<ProductionHub> hubContext)
+    public ProductionEventService(IHubContext<ProductionHub> hubContext, IWebPushService webPushService)
     {
         _hubContext = hubContext;
+        _webPushService = webPushService;
     }
 
     public async Task NotifyOrderActivatedAsync(OrderActivatedEvent evt, CancellationToken cancellationToken = default)
     {
         await _hubContext.Clients.Group($"tenant-{evt.TenantId}")
             .SendAsync("OrderActivated", evt, cancellationToken);
+
+        await _webPushService.SendToTenantAsync(evt.TenantId,
+            "New Order",
+            $"Order #{evt.OrderNumber} has been activated",
+            new { type = "OrderActivated", evt.OrderId, evt.OrderNumber },
+            cancellationToken);
     }
 
     public async Task NotifyProcessStartedAsync(ProcessStartedEvent evt, CancellationToken cancellationToken = default)
@@ -45,6 +53,12 @@ public class ProductionEventService : IProductionEventService
                 .SendAsync("ProcessBlocked", evt, cancellationToken),
             _hubContext.Clients.Group($"process-{evt.ProcessId}")
                 .SendAsync("ProcessBlocked", evt, cancellationToken));
+
+        await _webPushService.SendToTenantAsync(evt.TenantId,
+            "Process Blocked",
+            $"Order #{evt.OrderNumber} — process blocked: {evt.Reason}",
+            new { type = "ProcessBlocked", evt.OrderItemProcessId, evt.OrderId, evt.OrderNumber },
+            cancellationToken);
     }
 
     public async Task NotifyProcessUnblockedAsync(ProcessUnblockedEvent evt, CancellationToken cancellationToken = default)
@@ -66,6 +80,12 @@ public class ProductionEventService : IProductionEventService
     {
         await _hubContext.Clients.Group($"tenant-{evt.TenantId}")
             .SendAsync("BlockRequestApproved", evt, cancellationToken);
+
+        await _webPushService.SendToTenantAsync(evt.TenantId,
+            "Block Request Approved",
+            "A block request has been approved",
+            new { type = "BlockRequestApproved", evt.BlockRequestId },
+            cancellationToken);
     }
 
     public async Task NotifyWorkerCheckedInAsync(WorkerCheckedInEvent evt, CancellationToken cancellationToken = default)
@@ -90,5 +110,11 @@ public class ProductionEventService : IProductionEventService
     {
         await _hubContext.Clients.Group($"tenant-{evt.TenantId}")
             .SendAsync("DeadlineWarning", evt, cancellationToken);
+
+        await _webPushService.SendToTenantAsync(evt.TenantId,
+            $"Deadline {evt.Level}",
+            $"Order #{evt.OrderNumber} — {evt.DaysRemaining} days remaining",
+            new { type = "DeadlineWarning", evt.OrderId, evt.OrderNumber, evt.DaysRemaining, evt.Level },
+            cancellationToken);
     }
 }

@@ -6,6 +6,7 @@ using AlGreenMES.Modules.Orders.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace AlGreenMES.Modules.Orders.Infrastructure;
 
@@ -28,6 +29,11 @@ public static class OrdersInfrastructureServiceRegistration
         services.AddScoped<IChangeRequestRepository, ChangeRequestRepository>();
         services.AddScoped<IBlockRequestRepository, BlockRequestRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
+
+        // WebPush
+        services.Configure<WebPushSettings>(configuration.GetSection("WebPush"));
+        services.AddScoped<IWebPushService, WebPushService>();
 
         services.AddScoped<IDashboardQueryService, DashboardQueryService>();
 

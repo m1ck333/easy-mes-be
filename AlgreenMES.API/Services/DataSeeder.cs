@@ -424,6 +424,92 @@ public static class DataSeeder
         await ordersDb.SaveChangesAsync();
 
         // =====================================================================
+        // 10b. Orders that create "Incoming" data for tablet
+        // These have processes partially done so that later processes show as incoming
+        // (pending with unmet dependencies)
+        // =====================================================================
+
+        // --- ORD-2026-006: Pivot, Priority 1, +10 days, Active ---
+        // A-F completed, G (Grundiranje) InProgress → H (Farbanje) pending, blocked by G
+        // This shows as "incoming" for worker3 (Nikola, process H)
+        var order6 = Order.Create(tenantId, "ORD-2026-006", DateTime.UtcNow.AddDays(10),
+            1, OrderType.Standard, adminUser.Id, "Hitna narudžba - pivot vrata za klijenta Petrović");
+        var item6_1 = order6.AddItem(catPivot.Id, "Vrata Pivot", 3, "Stavka 1 - bijela");
+        AddProcessesAndSubProcesses(item6_1, catPivot);
+        ordersDb.Orders.Add(order6);
+
+        order6.Activate();
+
+        // Complete A through F
+        foreach (var code in new[] { "A", "B", "C", "D", "E", "F" })
+        {
+            var proc = item6_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == code).Id);
+            CompleteProcess(proc);
+        }
+        // Start G (Grundiranje) — InProgress, so H is blocked by G
+        var item6_1_procG = item6_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == "G").Id);
+        item6_1_procG.Start();
+
+        await ordersDb.SaveChangesAsync();
+
+        // --- ORD-2026-007: Standard, Priority 2, +5 days, Active ---
+        // A-E completed, F (Brušenje) InProgress → G pending (blocked by F), H pending (blocked by G)
+        // Shows as incoming for worker3 (process H) — blocked by G which is blocked by F
+        var order7 = Order.Create(tenantId, "ORD-2026-007", DateTime.UtcNow.AddDays(5),
+            2, OrderType.Repair, adminUser.Id, "Popravka vrata - hitan rok");
+        var item7_1 = order7.AddItem(catStandard.Id, "Vrata Standard", 1, "Popravka okvira");
+        AddProcessesAndSubProcesses(item7_1, catStandard);
+        ordersDb.Orders.Add(order7);
+
+        order7.Activate();
+
+        // Vrata Standard uses: A, B, D, E, F, G, H, I, J, K (no C)
+        foreach (var code in new[] { "A", "B", "D", "E" })
+        {
+            var proc = item7_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == code).Id);
+            CompleteProcess(proc);
+        }
+        // Start F (Brušenje) — InProgress
+        var item7_1_procF = item7_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == "F").Id);
+        item7_1_procF.Start();
+
+        await ordersDb.SaveChangesAsync();
+
+        // --- ORD-2026-008: Pivot, Priority 3, +18 days, Active ---
+        // A-F completed, G completed, H pending but with sub-processes
+        // This one goes to queue (not incoming) for worker3 since G is done
+        // BUT also: second item where A-D completed, E InProgress
+        // For worker3: item2 has H blocked by G (which is pending, blocked by F which is pending)
+        var order8 = Order.Create(tenantId, "ORD-2026-008", DateTime.UtcNow.AddDays(18),
+            3, OrderType.Standard, adminUser.Id, "Velika narudžba - 2 stavke pivot vrata");
+        var item8_1 = order8.AddItem(catPivot.Id, "Vrata Pivot", 2, "Stavka 1 - crna");
+        AddProcessesAndSubProcesses(item8_1, catPivot);
+        var item8_2 = order8.AddItem(catPivot.Id, "Vrata Pivot", 1, "Stavka 2 - siva");
+        AddProcessesAndSubProcesses(item8_2, catPivot);
+        ordersDb.Orders.Add(order8);
+
+        order8.Activate();
+
+        // Item 1: A-G completed → H is in queue for worker3 (not incoming)
+        foreach (var code in new[] { "A", "B", "C", "D", "E", "F", "G" })
+        {
+            var proc = item8_1.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == code).Id);
+            CompleteProcess(proc);
+        }
+
+        // Item 2: A-D completed, E InProgress → F,G,H all pending
+        // H is blocked by G (which is blocked by F which is pending)
+        foreach (var code in new[] { "A", "B", "C", "D" })
+        {
+            var proc = item8_2.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == code).Id);
+            CompleteProcess(proc);
+        }
+        var item8_2_procE = item8_2.Processes.First(p => p.ProcessId == processEntities.First(pe => pe.Code == "E").Id);
+        item8_2_procE.Start();
+
+        await ordersDb.SaveChangesAsync();
+
+        // =====================================================================
         // 11. Work Sessions
         // =====================================================================
 

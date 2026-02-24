@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: algreen-mes-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Set manually in Render dashboard — paste Neon connection string
+      - key: JwtSettings__Secret
+        generateValue: true
+      - key: JwtSettings__Issuer
+        value: AlGreenMES
+      - key: JwtSettings__Audience
+        value: AlGreenMES
+      - key: JwtSettings__ExpirationMinutes
+        value: "60"
+      - key: WebPush__VapidPublicKey
+        sync: false # Set manually
+      - key: WebPush__VapidPrivateKey
+        sync: false # Set manually
+      - key: WebPush__VapidSubject
+        value: "mailto:support@algreen.rs"
+      - key: WebPush__Enabled
+        value: "true"
