@@ -5,5 +5,8 @@ public enum NotificationType
     DeadlineWarning,
     DeadlineCritical,
     BlockRequest,
-    ProcessCompleted
+    BlockRequestApproved,
+    ProcessCompleted,
+    ProcessBlocked,
+    OrderActivated
 }

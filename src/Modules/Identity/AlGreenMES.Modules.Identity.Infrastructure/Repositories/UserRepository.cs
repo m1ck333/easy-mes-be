@@ -49,6 +49,13 @@ public class UserRepository : IUserRepository
             .AnyAsync(u => u.Email == normalizedEmail && u.TenantId == tenantId, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<User>> GetByProcessIdAsync(Guid processId, Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Users
+            .Where(u => u.TenantId == tenantId && u.ProcessId == processId && u.IsActive)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<PagedResult<User>> GetPagedAsync(Guid tenantId, UserRole? role, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Users.Where(u => u.TenantId == tenantId);

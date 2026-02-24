@@ -1,7 +1,9 @@
 using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
+using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using AlGreenMES.Modules.Production.Domain.Repositories;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CompleteProcess;
@@ -9,12 +11,18 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.CompleteProcess;
 public class CompleteProcessCommandHandler : IRequestHandler<CompleteProcessCommand, Unit>
 {
     private readonly IOrderItemProcessRepository _orderItemProcessRepository;
+    private readonly IProductCategoryRepository _categoryRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
 
-    public CompleteProcessCommandHandler(IOrderItemProcessRepository orderItemProcessRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
+    public CompleteProcessCommandHandler(
+        IOrderItemProcessRepository orderItemProcessRepository,
+        IProductCategoryRepository categoryRepository,
+        IOrdersUnitOfWork unitOfWork,
+        IProductionEventService eventService)
     {
         _orderItemProcessRepository = orderItemProcessRepository;
+        _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _eventService = eventService;
     }
@@ -28,13 +36,47 @@ public class CompleteProcessCommandHandler : IRequestHandler<CompleteProcessComm
         process.Complete();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var orderId = process.OrderItem.Order.Id;
+        var orderNumber = process.OrderItem.Order.OrderNumber;
+        var tenantId = process.TenantId;
+
         await _eventService.NotifyProcessCompletedAsync(
-            new ProcessCompletedEvent(
-                process.Id,
-                process.ProcessId,
-                process.OrderItem.Order.Id,
-                process.OrderItem.Order.OrderNumber,
-                process.TenantId), cancellationToken);
+            new ProcessCompletedEvent(process.Id, process.ProcessId, orderId, orderNumber, tenantId),
+            cancellationToken);
+
+        // Check if any downstream processes are now ready (all dependencies met)
+        var siblingProcesses = await _orderItemProcessRepository.GetByOrderItemIdAsync(process.OrderItemId, cancellationToken);
+        var category = await _categoryRepository.GetByIdWithDetailsAsync(process.OrderItem.ProductCategoryId, cancellationToken);
+        var dependencies = category?.Dependencies ?? [];
+
+        foreach (var sibling in siblingProcesses)
+        {
+            if (sibling.Id == process.Id) continue;
+            if (sibling.Status != ProcessStatus.Pending) continue;
+            if (sibling.IsWithdrawn) continue;
+
+            // Get this sibling's dependencies
+            var siblingDeps = dependencies
+                .Where(d => d.ProcessId == sibling.ProcessId)
+                .Select(d => d.DependsOnProcessId)
+                .ToList();
+
+            // Must depend on the just-completed process (otherwise this completion didn't affect it)
+            if (!siblingDeps.Contains(process.ProcessId)) continue;
+
+            // Check if ALL dependencies are now met
+            var allDepsCompleted = siblingDeps.All(depProcessId =>
+                siblingProcesses.Any(p =>
+                    p.ProcessId == depProcessId &&
+                    (p.Status == ProcessStatus.Completed || p.Status == ProcessStatus.Withdrawn)));
+
+            if (allDepsCompleted)
+            {
+                await _eventService.NotifyProcessReadyForQueueAsync(
+                    new ProcessReadyForQueueEvent(sibling.Id, sibling.ProcessId, orderId, orderNumber, tenantId),
+                    cancellationToken);
+            }
+        }
 
         return Unit.Value;
     }
