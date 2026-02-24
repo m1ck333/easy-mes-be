@@ -8,4 +8,5 @@ public record CreateUserRequest(
     string Password,
     string FirstName,
     string LastName,
-    UserRole Role);
+    UserRole Role,
+    Guid? ProcessId);

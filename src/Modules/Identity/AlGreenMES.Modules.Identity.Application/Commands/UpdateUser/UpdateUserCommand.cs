@@ -10,4 +10,5 @@ public record UpdateUserCommand(
     string LastName,
     UserRole Role,
     bool IsActive,
-    bool CanIncludeWithdrawnInAnalysis) : IRequest<UserDto>;
+    bool CanIncludeWithdrawnInAnalysis,
+    Guid? ProcessId) : IRequest<UserDto>;

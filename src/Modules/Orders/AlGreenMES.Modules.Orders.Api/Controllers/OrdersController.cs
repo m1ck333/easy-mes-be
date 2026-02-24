@@ -16,6 +16,7 @@ using AlGreenMES.Modules.Orders.Application.Commands.UpdateOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.WithdrawOrderToProcess;
 using AlGreenMES.Modules.Orders.Application.Queries.GetOrderById;
 using AlGreenMES.Modules.Orders.Application.Queries.GetOrders;
+using AlGreenMES.Modules.Orders.Application.Queries.GetOrdersMasterView;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -48,6 +49,32 @@ public class OrdersController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetOrdersQuery
+        {
+            TenantId = tenantId,
+            Status = status,
+            OrderType = orderType,
+            DateFrom = dateFrom,
+            DateTo = dateTo,
+            Page = page,
+            PageSize = pageSize,
+            Search = search
+        }, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("master-view")]
+    public async Task<IActionResult> GetOrdersMasterView(
+        [FromQuery] Guid tenantId,
+        [FromQuery] OrderStatus? status,
+        [FromQuery] OrderType? orderType,
+        [FromQuery] DateTime? dateFrom,
+        [FromQuery] DateTime? dateTo,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetOrdersMasterViewQuery
         {
             TenantId = tenantId,
             Status = status,

@@ -41,6 +41,8 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserD
             request.LastName,
             request.Role);
 
+        user.AssignToProcess(request.Role == UserRole.Department ? request.ProcessId : null);
+
         await _userRepository.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

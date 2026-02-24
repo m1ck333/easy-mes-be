@@ -7,4 +7,5 @@ public record UpdateUserRequest(
     string LastName,
     UserRole Role,
     bool IsActive,
-    bool CanIncludeWithdrawnInAnalysis);
+    bool CanIncludeWithdrawnInAnalysis,
+    Guid? ProcessId);
