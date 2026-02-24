@@ -52,6 +52,11 @@ public class AddOrderItemCommandHandler : IRequestHandler<AddOrderItemCommand, O
             }
         }
 
+        // Explicitly add the new item to the DbContext — EF Core's DetectChanges
+        // does not reliably discover new entities added to a tracked entity's
+        // navigation collection when using PropertyAccessMode.Field.
+        _orderRepository.AddItem(item);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var refreshed = await _orderRepository.GetByIdWithFullDetailsAsync(request.OrderId, cancellationToken);

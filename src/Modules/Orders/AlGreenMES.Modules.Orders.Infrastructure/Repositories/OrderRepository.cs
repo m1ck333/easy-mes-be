@@ -60,6 +60,11 @@ public class OrderRepository : IOrderRepository
         await _dbContext.Orders.AddAsync(order, cancellationToken);
     }
 
+    public void AddItem(OrderItem item)
+    {
+        _dbContext.OrderItems.Add(item);
+    }
+
     public async Task<IReadOnlyList<Order>> GetActiveOrdersWithProcessesAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Orders
