@@ -70,13 +70,13 @@ public class OrderItemSubProcess : TenantEntity
         TotalDurationMinutes += minutes;
     }
 
-    public OrderItemSubProcessLog StartLog(Guid workSessionId)
+    public OrderItemSubProcessLog StartLog(Guid userId)
     {
         var openLog = _logs.FirstOrDefault(l => l.EndTime == null);
         if (openLog != null)
             throw new DomainException("LOG_ALREADY_OPEN", "There is already an open log entry for this sub-process.");
 
-        var log = OrderItemSubProcessLog.Start(TenantId, Id, workSessionId);
+        var log = OrderItemSubProcessLog.Start(TenantId, Id, userId);
         _logs.Add(log);
         return log;
     }

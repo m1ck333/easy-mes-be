@@ -19,11 +19,6 @@ public class OrderItemSubProcessLogConfiguration : IEntityTypeConfiguration<Orde
             .IsRequired();
 
         builder.HasIndex(l => l.OrderItemSubProcessId);
-        builder.HasIndex(l => l.WorkSessionId);
-
-        builder.HasOne(l => l.WorkSession)
-            .WithMany()
-            .HasForeignKey(l => l.WorkSessionId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(l => l.UserId);
     }
 }

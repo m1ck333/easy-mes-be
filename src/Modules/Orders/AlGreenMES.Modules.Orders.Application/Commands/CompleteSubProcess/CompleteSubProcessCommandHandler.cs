@@ -12,18 +12,15 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.CompleteSubProcess;
 public class CompleteSubProcessCommandHandler : IRequestHandler<CompleteSubProcessCommand, OrderItemSubProcessDto>
 {
     private readonly IOrderItemSubProcessRepository _subProcessRepository;
-    private readonly IWorkSessionRepository _workSessionRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
 
     public CompleteSubProcessCommandHandler(
         IOrderItemSubProcessRepository subProcessRepository,
-        IWorkSessionRepository workSessionRepository,
         IOrdersUnitOfWork unitOfWork,
         IProductionEventService eventService)
     {
         _subProcessRepository = subProcessRepository;
-        _workSessionRepository = workSessionRepository;
         _unitOfWork = unitOfWork;
         _eventService = eventService;
     }
@@ -38,13 +35,6 @@ public class CompleteSubProcessCommandHandler : IRequestHandler<CompleteSubProce
 
         if (process.OrderItem.Order.Status != OrderStatus.Active)
             throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active.");
-
-        var session = await _workSessionRepository.GetActiveSessionAsync(request.UserId, cancellationToken);
-        if (session == null)
-            throw new DomainException("NOT_CHECKED_IN", "User must be checked in.");
-
-        if (session.ProcessId != process.Id)
-            throw new DomainException("SESSION_MISMATCH", "Active work session is for a different process.");
 
         if (subProcess.Status != SubProcessStatus.InProgress)
             throw new DomainException("INVALID_STATUS", "Sub-process must be in progress to complete.");

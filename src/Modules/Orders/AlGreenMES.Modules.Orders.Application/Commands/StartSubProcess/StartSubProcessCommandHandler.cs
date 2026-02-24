@@ -11,16 +11,13 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.StartSubProcess;
 public class StartSubProcessCommandHandler : IRequestHandler<StartSubProcessCommand, OrderItemSubProcessDto>
 {
     private readonly IOrderItemSubProcessRepository _subProcessRepository;
-    private readonly IWorkSessionRepository _workSessionRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
 
     public StartSubProcessCommandHandler(
         IOrderItemSubProcessRepository subProcessRepository,
-        IWorkSessionRepository workSessionRepository,
         IOrdersUnitOfWork unitOfWork)
     {
         _subProcessRepository = subProcessRepository;
-        _workSessionRepository = workSessionRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -34,13 +31,6 @@ public class StartSubProcessCommandHandler : IRequestHandler<StartSubProcessComm
 
         if (process.OrderItem.Order.Status != OrderStatus.Active)
             throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active to start a sub-process.");
-
-        var session = await _workSessionRepository.GetActiveSessionAsync(request.UserId, cancellationToken);
-        if (session == null)
-            throw new DomainException("NOT_CHECKED_IN", "User must be checked in.");
-
-        if (session.ProcessId != process.Id)
-            throw new DomainException("SESSION_MISMATCH", "Active work session is for a different process.");
 
         if (process.Status != ProcessStatus.InProgress)
             throw new DomainException("PROCESS_NOT_STARTED", "Parent process must be in progress.");
@@ -60,7 +50,7 @@ public class StartSubProcessCommandHandler : IRequestHandler<StartSubProcessComm
         }
 
         subProcess.Start();
-        subProcess.StartLog(session.Id);
+        subProcess.StartLog(request.UserId);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

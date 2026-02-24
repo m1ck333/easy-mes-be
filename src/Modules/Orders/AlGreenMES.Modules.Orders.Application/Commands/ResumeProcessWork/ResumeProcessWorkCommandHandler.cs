@@ -9,16 +9,13 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.ResumeProcessWork;
 public class ResumeProcessWorkCommandHandler : IRequestHandler<ResumeProcessWorkCommand, Unit>
 {
     private readonly IOrderItemProcessRepository _processRepository;
-    private readonly IWorkSessionRepository _workSessionRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
 
     public ResumeProcessWorkCommandHandler(
         IOrderItemProcessRepository processRepository,
-        IWorkSessionRepository workSessionRepository,
         IOrdersUnitOfWork unitOfWork)
     {
         _processRepository = processRepository;
-        _workSessionRepository = workSessionRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -30,13 +27,6 @@ public class ResumeProcessWorkCommandHandler : IRequestHandler<ResumeProcessWork
 
         if (process.OrderItem.Order.Status != OrderStatus.Active)
             throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active.");
-
-        var session = await _workSessionRepository.GetActiveSessionAsync(request.UserId, cancellationToken);
-        if (session == null)
-            throw new DomainException("NOT_CHECKED_IN", "User must be checked in.");
-
-        if (session.ProcessId != process.Id)
-            throw new DomainException("SESSION_MISMATCH", "Active work session is for a different process.");
 
         if (process.Status != ProcessStatus.InProgress)
             throw new DomainException("INVALID_STATUS", "Process must be in progress to resume.");
@@ -51,7 +41,7 @@ public class ResumeProcessWorkCommandHandler : IRequestHandler<ResumeProcessWork
         if (existingOpenLog != null)
             throw new DomainException("ALREADY_RUNNING", "Work is already in progress. Stop before resuming.");
 
-        activeSubProcess.StartLog(session.Id);
+        activeSubProcess.StartLog(request.UserId);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

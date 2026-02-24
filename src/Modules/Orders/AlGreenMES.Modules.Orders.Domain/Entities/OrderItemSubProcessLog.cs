@@ -6,26 +6,25 @@ namespace AlGreenMES.Modules.Orders.Domain.Entities;
 public class OrderItemSubProcessLog : TenantEntity
 {
     public Guid OrderItemSubProcessId { get; private set; }
-    public Guid WorkSessionId { get; private set; }
+    public Guid UserId { get; private set; }
     public DateTime StartTime { get; private set; }
     public DateTime? EndTime { get; private set; }
     public int? DurationMinutes { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
     public OrderItemSubProcess OrderItemSubProcess { get; private set; } = null!;
-    public WorkSession WorkSession { get; private set; } = null!;
 
     private OrderItemSubProcessLog()
     {
     }
 
-    public static OrderItemSubProcessLog Start(Guid tenantId, Guid orderItemSubProcessId, Guid workSessionId)
+    public static OrderItemSubProcessLog Start(Guid tenantId, Guid orderItemSubProcessId, Guid userId)
     {
         return new OrderItemSubProcessLog
         {
             TenantId = tenantId,
             OrderItemSubProcessId = orderItemSubProcessId,
-            WorkSessionId = workSessionId,
+            UserId = userId,
             StartTime = DateTime.UtcNow
         };
     }

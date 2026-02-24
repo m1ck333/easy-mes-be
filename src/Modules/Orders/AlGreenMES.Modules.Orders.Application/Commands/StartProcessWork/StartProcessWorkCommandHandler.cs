@@ -12,18 +12,15 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.StartProcessWork;
 public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCommand, OrderItemProcessDto>
 {
     private readonly IOrderItemProcessRepository _processRepository;
-    private readonly IWorkSessionRepository _workSessionRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
 
     public StartProcessWorkCommandHandler(
         IOrderItemProcessRepository processRepository,
-        IWorkSessionRepository workSessionRepository,
         IOrdersUnitOfWork unitOfWork,
         IProductionEventService eventService)
     {
         _processRepository = processRepository;
-        _workSessionRepository = workSessionRepository;
         _unitOfWork = unitOfWork;
         _eventService = eventService;
     }
@@ -36,13 +33,6 @@ public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCo
 
         if (process.OrderItem.Order.Status != OrderStatus.Active)
             throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active to start work.");
-
-        var session = await _workSessionRepository.GetActiveSessionAsync(request.UserId, cancellationToken);
-        if (session == null)
-            throw new DomainException("NOT_CHECKED_IN", "User must be checked in to start work.");
-
-        if (session.ProcessId != process.Id)
-            throw new DomainException("SESSION_MISMATCH", "Active work session is for a different process.");
 
         // Validate dependencies: all sibling processes that this one depends on must be Completed
         var siblingProcesses = await _processRepository.GetByOrderItemIdAsync(process.OrderItemId, cancellationToken);
@@ -59,7 +49,7 @@ public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCo
         if (firstSubProcess != null)
         {
             firstSubProcess.Start();
-            firstSubProcess.StartLog(session.Id);
+            firstSubProcess.StartLog(request.UserId);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
