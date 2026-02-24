@@ -30,8 +30,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .HasMaxLength(50);
 
         builder.Property(n => n.IsRead)
-            .IsRequired()
-            .HasDefaultValue(false);
+            .IsRequired();
 
         builder.Property(n => n.CreatedAt)
             .IsRequired();

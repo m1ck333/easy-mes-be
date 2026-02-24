@@ -19,8 +19,7 @@ public class OrderItemProcessConfiguration : IEntityTypeConfiguration<OrderItemP
             .HasMaxLength(20);
 
         builder.Property(p => p.ComplexityOverridden)
-            .IsRequired()
-            .HasDefaultValue(false);
+            .IsRequired();
 
         builder.Property(p => p.Status)
             .IsRequired()
@@ -28,12 +27,10 @@ public class OrderItemProcessConfiguration : IEntityTypeConfiguration<OrderItemP
             .HasMaxLength(20);
 
         builder.Property(p => p.TotalDurationMinutes)
-            .IsRequired()
-            .HasDefaultValue(0);
+            .IsRequired();
 
         builder.Property(p => p.IsWithdrawn)
-            .IsRequired()
-            .HasDefaultValue(false);
+            .IsRequired();
 
         builder.Property(p => p.BlockReason)
             .HasMaxLength(2000);

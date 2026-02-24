@@ -19,12 +19,10 @@ public class OrderItemSubProcessConfiguration : IEntityTypeConfiguration<OrderIt
             .HasMaxLength(20);
 
         builder.Property(sp => sp.TotalDurationMinutes)
-            .IsRequired()
-            .HasDefaultValue(0);
+            .IsRequired();
 
         builder.Property(sp => sp.IsWithdrawn)
-            .IsRequired()
-            .HasDefaultValue(false);
+            .IsRequired();
 
         builder.Property(sp => sp.WithdrawnReason)
             .HasMaxLength(2000);
