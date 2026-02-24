@@ -23,8 +23,8 @@ public class OverrideComplexityCommandHandler : IRequestHandler<OverrideComplexi
         if (order == null)
             throw new NotFoundException("Order", request.OrderId);
 
-        if (order.Status != OrderStatus.Draft)
-            throw new DomainException("ORDER_NOT_DRAFT", "Can only override complexity on draft orders.");
+        if (order.Status == OrderStatus.Cancelled || order.Status == OrderStatus.Completed)
+            throw new DomainException("INVALID_STATUS", "Cannot override complexity on completed or cancelled orders.");
 
         var item = order.Items.FirstOrDefault(i => i.Id == request.OrderItemId);
         if (item == null)
