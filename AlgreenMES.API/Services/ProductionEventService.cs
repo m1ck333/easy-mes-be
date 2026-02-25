@@ -159,11 +159,45 @@ public class ProductionEventService : IProductionEventService
         await _hubContext.Clients.Group($"tenant-{evt.TenantId}")
             .SendAsync("DeadlineWarning", evt, cancellationToken);
 
-        await _webPushService.SendToTenantAsync(evt.TenantId,
-            $"Rok — {evt.Level}",
-            $"Narudžbina #{evt.OrderNumber} — još {evt.DaysRemaining} dana",
-            new { type = "DeadlineWarning", evt.OrderId, evt.OrderNumber, evt.DaysRemaining, evt.Level },
-            cancellationToken);
+        var levelSr = evt.Level == "Critical" ? "Kritično" : "Upozorenje";
+        var title = $"Rok — {levelSr}";
+        var message = $"Narudžbina #{evt.OrderNumber} — još {evt.DaysRemaining} dana";
+        var pushData = new { type = "DeadlineWarning", evt.OrderId, evt.OrderNumber, evt.DaysRemaining, evt.Level };
+
+        // Collect target user IDs: dashboard users + workers on relevant processes
+        var allUsers = await _userRepository.GetByTenantIdAsync(evt.TenantId, cancellationToken);
+        var dashboardUserIds = allUsers
+            .Where(u => u.IsActive && DashboardRoles.Contains(u.Role))
+            .Select(u => u.Id)
+            .ToList();
+
+        var workerIds = new List<Guid>();
+        foreach (var processId in evt.ProcessIds)
+        {
+            var workers = await _userRepository.GetByProcessIdAsync(processId, evt.TenantId, cancellationToken);
+            workerIds.AddRange(workers.Select(w => w.Id));
+        }
+
+        var targetUserIds = dashboardUserIds.Union(workerIds).Distinct().ToList();
+
+        // Send targeted push
+        if (targetUserIds.Count > 0)
+        {
+            await _webPushService.SendToUsersAsync(targetUserIds, title, message, pushData, cancellationToken);
+        }
+
+        // Create per-user in-app notifications
+        var notificationType = evt.Level == "Critical"
+            ? NotificationType.DeadlineCritical
+            : NotificationType.DeadlineWarning;
+
+        foreach (var userId in targetUserIds)
+        {
+            var notification = Notification.Create(evt.TenantId, userId, notificationType, title, message, "Order", evt.OrderId);
+            await _notificationRepository.AddAsync(notification, cancellationToken);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task NotifyProcessReadyForQueueAsync(ProcessReadyForQueueEvent evt, CancellationToken cancellationToken = default)
@@ -172,16 +206,26 @@ public class ProductionEventService : IProductionEventService
         await _hubContext.Clients.Group($"process-{evt.ProcessId}")
             .SendAsync("ProcessReadyForQueue", evt, cancellationToken);
 
-        // Send push notification only to workers assigned to this process
-        var users = await _userRepository.GetByProcessIdAsync(evt.ProcessId, evt.TenantId, cancellationToken);
-        if (users.Count > 0)
+        // Send push notification + in-app notification to workers assigned to this process
+        var workers = await _userRepository.GetByProcessIdAsync(evt.ProcessId, evt.TenantId, cancellationToken);
+        if (workers.Count > 0)
         {
-            var userIds = users.Select(u => u.Id);
-            await _webPushService.SendToUsersAsync(userIds,
-                "Nova narudžbina u redu",
-                $"Narudžbina #{evt.OrderNumber} je spremna za vaš proces",
+            var title = "Nova narudžbina u redu";
+            var message = $"Narudžbina #{evt.OrderNumber} je spremna za vaš proces";
+            var workerIds = workers.Select(u => u.Id).ToList();
+
+            await _webPushService.SendToUsersAsync(workerIds, title, message,
                 new { type = "ProcessReadyForQueue", evt.OrderItemProcessId, evt.OrderId, evt.OrderNumber },
                 cancellationToken);
+
+            foreach (var workerId in workerIds)
+            {
+                var notification = Notification.Create(evt.TenantId, workerId,
+                    NotificationType.OrderActivated, title, message, "Order", evt.OrderId);
+                await _notificationRepository.AddAsync(notification, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 

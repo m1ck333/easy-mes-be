@@ -6,4 +6,5 @@ public record DeadlineWarningEvent(
     DateTime DeliveryDate,
     int DaysRemaining,
     string Level,
-    Guid TenantId);
+    Guid TenantId,
+    IReadOnlyList<Guid> ProcessIds);

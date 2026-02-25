@@ -1,8 +1,6 @@
 using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
-using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Enums;
-using AlGreenMES.Modules.Orders.Domain.Repositories;
 using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
 using AlGreenMES.Modules.Tenancy.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -49,8 +47,6 @@ public class DeadlineWarningService : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var tenancyDb = scope.ServiceProvider.GetRequiredService<TenancyDbContext>();
         var ordersDb = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
-        var notificationRepository = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IOrdersUnitOfWork>();
         var eventService = scope.ServiceProvider.GetRequiredService<IProductionEventService>();
 
         var tenants = await tenancyDb.Tenants
@@ -69,6 +65,8 @@ public class DeadlineWarningService : BackgroundService
 
             var activeOrders = await ordersDb.Orders
                 .AsNoTracking()
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Processes)
                 .Where(o => o.TenantId == tenant.Id && o.Status == OrderStatus.Active)
                 .ToListAsync(cancellationToken);
 
@@ -98,33 +96,28 @@ public class DeadlineWarningService : BackgroundService
 
                 if (alreadyNotified) continue;
 
-                // Create notification (use a placeholder admin user - in production, notify all admins/managers)
-                var notification = Notification.Create(
-                    tenant.Id,
-                    Guid.Empty, // broadcast notification
-                    notificationType,
-                    $"{level} Deadline: {order.OrderNumber}",
-                    $"Order {order.OrderNumber} has {daysRemaining} days remaining until delivery ({order.DeliveryDate:yyyy-MM-dd}).",
-                    "Order",
-                    order.Id);
+                // Collect distinct processIds with pending/in-progress work
+                var processIds = order.Items
+                    .SelectMany(i => i.Processes)
+                    .Where(p => !p.IsWithdrawn && p.Status != ProcessStatus.Completed)
+                    .Select(p => p.ProcessId)
+                    .Distinct()
+                    .ToList();
 
-                await notificationRepository.AddAsync(notification, cancellationToken);
-
-                // Broadcast SignalR event
+                // NotifyDeadlineWarningAsync handles per-user notifications + push
                 await eventService.NotifyDeadlineWarningAsync(new DeadlineWarningEvent(
                     order.Id,
                     order.OrderNumber,
                     order.DeliveryDate,
                     daysRemaining,
                     level,
-                    tenant.Id), cancellationToken);
+                    tenant.Id,
+                    processIds), cancellationToken);
 
                 _logger.LogInformation(
                     "{Level} deadline warning for order {OrderNumber}: {DaysRemaining} days remaining.",
                     level, order.OrderNumber, daysRemaining);
             }
-
-            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 }
