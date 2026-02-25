@@ -40,15 +40,15 @@ public class ProductionEventService : IProductionEventService
             .SendAsync("OrderActivated", evt, cancellationToken);
 
         await _webPushService.SendToTenantAsync(evt.TenantId,
-            "New Order",
-            $"Order #{evt.OrderNumber} has been activated",
+            "Nova narudžbina",
+            $"Narudžbina #{evt.OrderNumber} je aktivirana",
             new { type = "OrderActivated", evt.OrderId, evt.OrderNumber },
             cancellationToken);
 
         await CreateNotificationsForDashboardUsersAsync(evt.TenantId,
             NotificationType.OrderActivated,
-            "New Order",
-            $"Order #{evt.OrderNumber} has been activated",
+            "Nova narudžbina",
+            $"Narudžbina #{evt.OrderNumber} je aktivirana",
             "Order", evt.OrderId, cancellationToken);
     }
 
@@ -71,8 +71,8 @@ public class ProductionEventService : IProductionEventService
 
         await CreateNotificationsForDashboardUsersAsync(evt.TenantId,
             NotificationType.ProcessCompleted,
-            "Process Completed",
-            $"Order #{evt.OrderNumber} — a process has been completed",
+            "Proces završen",
+            $"Narudžbina #{evt.OrderNumber} — proces je završen",
             "Order", evt.OrderId, cancellationToken);
     }
 
@@ -85,15 +85,15 @@ public class ProductionEventService : IProductionEventService
                 .SendAsync("ProcessBlocked", evt, cancellationToken));
 
         await _webPushService.SendToTenantAsync(evt.TenantId,
-            "Process Blocked",
-            $"Order #{evt.OrderNumber} — process blocked: {evt.Reason}",
+            "Proces blokiran",
+            $"Narudžbina #{evt.OrderNumber} — proces blokiran: {evt.Reason}",
             new { type = "ProcessBlocked", evt.OrderItemProcessId, evt.OrderId, evt.OrderNumber },
             cancellationToken);
 
         await CreateNotificationsForDashboardUsersAsync(evt.TenantId,
             NotificationType.ProcessBlocked,
-            "Process Blocked",
-            $"Order #{evt.OrderNumber} — process blocked: {evt.Reason}",
+            "Proces blokiran",
+            $"Narudžbina #{evt.OrderNumber} — proces blokiran: {evt.Reason}",
             "Order", evt.OrderId, cancellationToken);
     }
 
@@ -113,8 +113,8 @@ public class ProductionEventService : IProductionEventService
 
         await CreateNotificationsForDashboardUsersAsync(evt.TenantId,
             NotificationType.BlockRequest,
-            "New Block Request",
-            "A new block request has been submitted for review",
+            "Novi zahtev za blokadu",
+            "Novi zahtev za blokadu je poslat na pregled",
             "BlockRequest", evt.BlockRequestId, cancellationToken);
     }
 
@@ -124,15 +124,15 @@ public class ProductionEventService : IProductionEventService
             .SendAsync("BlockRequestApproved", evt, cancellationToken);
 
         await _webPushService.SendToTenantAsync(evt.TenantId,
-            "Block Request Approved",
-            "A block request has been approved",
+            "Zahtev odobren",
+            "Zahtev za blokadu je odobren",
             new { type = "BlockRequestApproved", evt.BlockRequestId },
             cancellationToken);
 
         await CreateNotificationsForDashboardUsersAsync(evt.TenantId,
             NotificationType.BlockRequestApproved,
-            "Block Request Approved",
-            "A block request has been approved",
+            "Zahtev odobren",
+            "Zahtev za blokadu je odobren",
             "BlockRequest", evt.BlockRequestId, cancellationToken);
     }
 
@@ -160,8 +160,8 @@ public class ProductionEventService : IProductionEventService
             .SendAsync("DeadlineWarning", evt, cancellationToken);
 
         await _webPushService.SendToTenantAsync(evt.TenantId,
-            $"Deadline {evt.Level}",
-            $"Order #{evt.OrderNumber} — {evt.DaysRemaining} days remaining",
+            $"Rok — {evt.Level}",
+            $"Narudžbina #{evt.OrderNumber} — još {evt.DaysRemaining} dana",
             new { type = "DeadlineWarning", evt.OrderId, evt.OrderNumber, evt.DaysRemaining, evt.Level },
             cancellationToken);
     }
@@ -178,8 +178,8 @@ public class ProductionEventService : IProductionEventService
         {
             var userIds = users.Select(u => u.Id);
             await _webPushService.SendToUsersAsync(userIds,
-                "New Order in Queue",
-                $"Order #{evt.OrderNumber} is ready for your process",
+                "Nova narudžbina u redu",
+                $"Narudžbina #{evt.OrderNumber} je spremna za vaš proces",
                 new { type = "ProcessReadyForQueue", evt.OrderItemProcessId, evt.OrderId, evt.OrderNumber },
                 cancellationToken);
         }
