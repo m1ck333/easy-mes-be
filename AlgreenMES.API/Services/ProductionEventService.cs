@@ -39,16 +39,16 @@ public class ProductionEventService : IProductionEventService
         await _hubContext.Clients.Group($"tenant-{evt.TenantId}")
             .SendAsync("OrderActivated", evt, cancellationToken);
 
-        await _webPushService.SendToTenantAsync(evt.TenantId,
-            "Nova narudžbina",
-            $"Narudžbina #{evt.OrderNumber} je aktivirana",
+        var title = "Nova narudžbina";
+        var message = $"Narudžbina #{evt.OrderNumber} je aktivirana";
+
+        await _webPushService.SendToTenantAsync(evt.TenantId, title, message,
             new { type = "OrderActivated", evt.OrderId, evt.OrderNumber },
             cancellationToken);
 
-        await CreateNotificationsForDashboardUsersAsync(evt.TenantId,
-            NotificationType.OrderActivated,
-            "Nova narudžbina",
-            $"Narudžbina #{evt.OrderNumber} je aktivirana",
+        // Create in-app notifications for ALL active users (dashboard + workers)
+        await CreateNotificationsForAllUsersAsync(evt.TenantId,
+            NotificationType.OrderActivated, title, message,
             "Order", evt.OrderId, cancellationToken);
     }
 
@@ -227,6 +227,26 @@ public class ProductionEventService : IProductionEventService
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private async Task CreateNotificationsForAllUsersAsync(
+        Guid tenantId,
+        NotificationType type,
+        string title,
+        string message,
+        string? referenceType,
+        Guid? referenceId,
+        CancellationToken cancellationToken)
+    {
+        var allUsers = await _userRepository.GetByTenantIdAsync(tenantId, cancellationToken);
+
+        foreach (var user in allUsers.Where(u => u.IsActive))
+        {
+            var notification = Notification.Create(tenantId, user.Id, type, title, message, referenceType, referenceId);
+            await _notificationRepository.AddAsync(notification, cancellationToken);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     private async Task CreateNotificationsForDashboardUsersAsync(

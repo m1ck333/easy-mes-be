@@ -12,6 +12,9 @@ public class OrderItemSubProcessLogConfiguration : IEntityTypeConfiguration<Orde
 
         builder.HasKey(l => l.Id);
 
+        builder.Property(l => l.Id)
+            .ValueGeneratedNever();
+
         builder.Property(l => l.StartTime)
             .IsRequired();
 
