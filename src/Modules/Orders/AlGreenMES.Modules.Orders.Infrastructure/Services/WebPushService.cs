@@ -143,18 +143,13 @@ public class WebPushService : IWebPushService
                     }
                 };
 
-                // Derive topic from endpoint origin (required by Apple Web Push)
-                var endpointUri = new Uri(sub.Endpoint);
-                var topic = endpointUri.Host.Contains("apple") ? _settings.VapidSubject : null;
-
                 var message = new PushMessage(payload)
                 {
-                    Urgency = PushMessageUrgency.High,
-                    Topic = topic
+                    Urgency = PushMessageUrgency.High
                 };
 
-                _logger.LogInformation("[WebPush] Sending to user {UserId}, endpoint: {Endpoint}, topic: {Topic}",
-                    sub.UserId, sub.Endpoint[..Math.Min(80, sub.Endpoint.Length)], topic ?? "(none)");
+                _logger.LogInformation("[WebPush] Sending to user {UserId}, endpoint: {Endpoint}",
+                    sub.UserId, sub.Endpoint[..Math.Min(80, sub.Endpoint.Length)]);
 
                 await _client.RequestPushMessageDeliveryAsync(pushSubscription, message, cancellationToken);
                 _logger.LogInformation("[WebPush] Successfully sent to user {UserId}", sub.UserId);
