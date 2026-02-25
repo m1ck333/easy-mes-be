@@ -40,14 +40,25 @@ public class UploadOrderAttachmentCommandHandler : IRequestHandler<UploadOrderAt
         if (order.TenantId != request.TenantId)
             throw new DomainException("FORBIDDEN", "Order does not belong to this tenant.");
 
-        // Validate file extension
+        // Validate content type
+        var contentType = (request.ContentType ?? "").ToLowerInvariant();
+        if (!_settings.AllowedContentTypes.Contains(contentType))
+            throw new DomainException("INVALID_CONTENT_TYPE", $"Content type '{request.ContentType}' is not allowed.");
+
+        // Validate file extension (derive from content type if missing)
         var extension = Path.GetExtension(request.FileName).ToLowerInvariant();
+        if (string.IsNullOrEmpty(extension))
+        {
+            extension = contentType switch
+            {
+                "image/jpeg" => ".jpg",
+                "image/png" => ".png",
+                "application/pdf" => ".pdf",
+                _ => ""
+            };
+        }
         if (!_settings.AllowedExtensions.Contains(extension))
             throw new DomainException("INVALID_FILE_TYPE", $"File type '{extension}' is not allowed. Allowed: {string.Join(", ", _settings.AllowedExtensions)}");
-
-        // Validate content type
-        if (!_settings.AllowedContentTypes.Contains(request.ContentType.ToLowerInvariant()))
-            throw new DomainException("INVALID_CONTENT_TYPE", $"Content type '{request.ContentType}' is not allowed.");
 
         // Validate file size
         if (request.FileSizeBytes > _settings.MaxFileSizeBytes)
