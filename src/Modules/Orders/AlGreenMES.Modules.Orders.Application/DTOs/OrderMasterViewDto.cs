@@ -13,4 +13,5 @@ public record OrderMasterViewDto(
     int? CustomCriticalDays,
     int CompletedProcesses,
     int TotalProcesses,
-    Dictionary<string, string> ProcessStatuses);
+    Dictionary<string, string> ProcessStatuses,
+    int AttachmentCount);

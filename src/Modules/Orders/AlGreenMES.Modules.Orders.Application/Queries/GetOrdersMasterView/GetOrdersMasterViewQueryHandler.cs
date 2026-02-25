@@ -51,7 +51,8 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             order.CustomCriticalDays,
             completedProcesses,
             totalProcesses,
-            processStatuses);
+            processStatuses,
+            order.Attachments.Count);
     }
 
     private static ProcessStatus AggregateStatus(IGrouping<Guid, OrderItemProcess> group)

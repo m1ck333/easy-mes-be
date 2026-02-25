@@ -117,6 +117,7 @@ public class OrderRepository : IOrderRepository
         var query = _dbContext.Orders
             .Include(o => o.Items)
                 .ThenInclude(i => i.Processes)
+            .Include(o => o.Attachments)
             .Where(o => o.TenantId == tenantId);
 
         if (status.HasValue)
