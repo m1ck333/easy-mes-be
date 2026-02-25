@@ -18,6 +18,9 @@ public class Order : AuditableEntity
     private readonly List<OrderItem> _items = new();
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
 
+    private readonly List<OrderAttachment> _attachments = new();
+    public IReadOnlyCollection<OrderAttachment> Attachments => _attachments.AsReadOnly();
+
     private Order()
     {
     }

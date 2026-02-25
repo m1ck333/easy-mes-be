@@ -7,19 +7,25 @@ using AlGreenMES.Modules.Orders.Application.Commands.AddSpecialRequest;
 using AlGreenMES.Modules.Orders.Application.Commands.CancelOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.ChangePriority;
 using AlGreenMES.Modules.Orders.Application.Commands.CreateOrder;
+using AlGreenMES.Modules.Orders.Application.Commands.DeleteOrderAttachment;
 using AlGreenMES.Modules.Orders.Application.Commands.OverrideComplexity;
 using AlGreenMES.Modules.Orders.Application.Commands.PauseOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.RemoveOrderItem;
 using AlGreenMES.Modules.Orders.Application.Commands.RemoveSpecialRequest;
 using AlGreenMES.Modules.Orders.Application.Commands.ResumeOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.UpdateOrder;
+using AlGreenMES.Modules.Orders.Application.Commands.UploadOrderAttachment;
 using AlGreenMES.Modules.Orders.Application.Commands.WithdrawOrderToProcess;
+using AlGreenMES.Modules.Orders.Application.Interfaces;
+using AlGreenMES.Modules.Orders.Application.Queries.GetOrderAttachments;
 using AlGreenMES.Modules.Orders.Application.Queries.GetOrderById;
 using AlGreenMES.Modules.Orders.Application.Queries.GetOrders;
 using AlGreenMES.Modules.Orders.Application.Queries.GetOrdersMasterView;
+using AlGreenMES.Modules.Orders.Domain.Repositories;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AlGreenMES.Modules.Orders.Api.Controllers;
@@ -30,10 +36,14 @@ namespace AlGreenMES.Modules.Orders.Api.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IOrderAttachmentRepository _attachmentRepository;
+    private readonly IFileStorageService _fileStorageService;
 
-    public OrdersController(IMediator mediator)
+    public OrdersController(IMediator mediator, IOrderAttachmentRepository attachmentRepository, IFileStorageService fileStorageService)
     {
         _mediator = mediator;
+        _attachmentRepository = attachmentRepository;
+        _fileStorageService = fileStorageService;
     }
 
     [HttpGet]
@@ -206,6 +216,53 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> OverrideComplexity(Guid orderId, Guid itemId, Guid processId, [FromBody] OverrideComplexityRequest request, CancellationToken cancellationToken)
     {
         await _mediator.Send(new OverrideComplexityCommand(orderId, itemId, processId, request.Complexity), cancellationToken);
+        return NoContent();
+    }
+
+    // --- Attachments ---
+
+    [HttpPost("{orderId:guid}/attachments")]
+    [Authorize(Roles = "Admin,Manager,SalesManager")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> UploadAttachment(Guid orderId, IFormFile file, [FromQuery] Guid tenantId, CancellationToken cancellationToken)
+    {
+        var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? throw new UnauthorizedAccessException("User ID claim not found in token."));
+
+        var result = await _mediator.Send(new UploadOrderAttachmentCommand(
+            orderId, tenantId, userId,
+            file.FileName, file.ContentType, file.Length, file.OpenReadStream()),
+            cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{orderId:guid}/attachments")]
+    public async Task<IActionResult> GetAttachments(Guid orderId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetOrderAttachmentsQuery(orderId), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{orderId:guid}/attachments/{id:guid}/download")]
+    public async Task<IActionResult> DownloadAttachment(Guid orderId, Guid id, CancellationToken cancellationToken)
+    {
+        var attachment = await _attachmentRepository.GetByIdAsync(id, cancellationToken);
+        if (attachment == null || attachment.OrderId != orderId)
+            return NotFound();
+
+        var stream = await _fileStorageService.GetFileAsync(attachment.StoragePath, cancellationToken);
+        if (stream == null)
+            return NotFound();
+
+        return File(stream, attachment.ContentType, attachment.OriginalFileName);
+    }
+
+    [HttpDelete("{orderId:guid}/attachments/{id:guid}")]
+    [Authorize(Roles = "Admin,Manager,SalesManager")]
+    public async Task<IActionResult> DeleteAttachment(Guid orderId, Guid id, [FromQuery] Guid tenantId, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new DeleteOrderAttachmentCommand(orderId, id, tenantId), cancellationToken);
         return NoContent();
     }
 }

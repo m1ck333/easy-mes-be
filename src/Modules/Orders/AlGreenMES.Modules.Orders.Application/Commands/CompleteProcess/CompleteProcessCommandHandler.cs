@@ -5,6 +5,7 @@ using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
 using AlGreenMES.Modules.Production.Domain.Repositories;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CompleteProcess;
 
@@ -14,17 +15,29 @@ public class CompleteProcessCommandHandler : IRequestHandler<CompleteProcessComm
     private readonly IProductCategoryRepository _categoryRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
+    private readonly IOrderRepository _orderRepository;
+    private readonly IOrderAttachmentRepository _attachmentRepository;
+    private readonly IFileStorageService _fileStorageService;
+    private readonly ILogger<CompleteProcessCommandHandler> _logger;
 
     public CompleteProcessCommandHandler(
         IOrderItemProcessRepository orderItemProcessRepository,
         IProductCategoryRepository categoryRepository,
         IOrdersUnitOfWork unitOfWork,
-        IProductionEventService eventService)
+        IProductionEventService eventService,
+        IOrderRepository orderRepository,
+        IOrderAttachmentRepository attachmentRepository,
+        IFileStorageService fileStorageService,
+        ILogger<CompleteProcessCommandHandler> logger)
     {
         _orderItemProcessRepository = orderItemProcessRepository;
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _eventService = eventService;
+        _orderRepository = orderRepository;
+        _attachmentRepository = attachmentRepository;
+        _fileStorageService = fileStorageService;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(CompleteProcessCommand request, CancellationToken cancellationToken)
@@ -76,6 +89,32 @@ public class CompleteProcessCommandHandler : IRequestHandler<CompleteProcessComm
                     new ProcessReadyForQueueEvent(sibling.Id, sibling.ProcessId, orderId, orderNumber, tenantId),
                     cancellationToken);
             }
+        }
+
+        // Check if order is now fully completed and clean up attachments
+        try
+        {
+            var order = await _orderRepository.GetByIdWithFullDetailsAsync(orderId, cancellationToken);
+            if (order != null && order.Items.All(i => i.IsCompleted()))
+            {
+                order.MarkCompleted();
+                var attachments = await _attachmentRepository.GetByOrderIdAsync(orderId, cancellationToken);
+                if (attachments.Count > 0)
+                {
+                    _attachmentRepository.RemoveRange(attachments);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    await _fileStorageService.DeleteDirectoryAsync(
+                        Path.Combine("orders", tenantId.ToString(), orderId.ToString()), cancellationToken);
+                }
+                else
+                {
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to clean up attachments for completed order {OrderId}", orderId);
         }
 
         return Unit.Value;

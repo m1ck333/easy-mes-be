@@ -30,6 +30,11 @@ public static class OrdersInfrastructureServiceRegistration
         services.AddScoped<IBlockRequestRepository, BlockRequestRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
+        services.AddScoped<IOrderAttachmentRepository, OrderAttachmentRepository>();
+
+        // File Storage
+        services.Configure<FileStorageSettings>(configuration.GetSection("FileStorage"));
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         // WebPush
         services.Configure<WebPushSettings>(configuration.GetSection("WebPush"));

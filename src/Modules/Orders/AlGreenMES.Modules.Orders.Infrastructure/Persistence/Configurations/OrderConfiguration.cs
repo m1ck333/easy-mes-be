@@ -53,5 +53,13 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Metadata.FindNavigation(nameof(Order.Items))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(o => o.Attachments)
+            .WithOne(a => a.Order)
+            .HasForeignKey(a => a.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Metadata.FindNavigation(nameof(Order.Attachments))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }
