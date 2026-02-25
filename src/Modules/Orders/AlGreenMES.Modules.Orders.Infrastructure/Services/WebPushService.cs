@@ -30,6 +30,9 @@ public class WebPushService : IWebPushService
         _logger = logger;
 
         _client = new PushServiceClient();
+        _logger.LogInformation("[WebPush] Initializing — Enabled={Enabled}, HasPublicKey={HasKey}, Subject={Subject}",
+            _settings.Enabled, !string.IsNullOrEmpty(_settings.VapidPublicKey), _settings.VapidSubject);
+
         if (_settings.Enabled && !string.IsNullOrEmpty(_settings.VapidPublicKey))
         {
             _client.DefaultAuthentication = new VapidAuthentication(
@@ -38,6 +41,11 @@ public class WebPushService : IWebPushService
             {
                 Subject = _settings.VapidSubject
             };
+            _logger.LogInformation("[WebPush] VAPID authentication configured");
+        }
+        else
+        {
+            _logger.LogWarning("[WebPush] VAPID authentication NOT configured (Enabled={Enabled})", _settings.Enabled);
         }
     }
 
@@ -71,33 +79,54 @@ public class WebPushService : IWebPushService
 
     public async Task SendToUserAsync(Guid userId, string title, string body, object? data = null, CancellationToken cancellationToken = default)
     {
-        if (!_settings.Enabled) return;
+        if (!_settings.Enabled)
+        {
+            _logger.LogWarning("[WebPush] Push is DISABLED, skipping SendToUserAsync");
+            return;
+        }
 
         var subscriptions = await _subscriptionRepository.GetByUserIdActiveAsync(userId, cancellationToken);
+        _logger.LogInformation("[WebPush] SendToUserAsync for user {UserId}, found {Count} subscriptions", userId, subscriptions.Count);
         await SendToSubscriptionsAsync(subscriptions, title, body, data, cancellationToken);
     }
 
     public async Task SendToUsersAsync(IEnumerable<Guid> userIds, string title, string body, object? data = null, CancellationToken cancellationToken = default)
     {
-        if (!_settings.Enabled) return;
+        if (!_settings.Enabled)
+        {
+            _logger.LogWarning("[WebPush] Push is DISABLED, skipping SendToUsersAsync");
+            return;
+        }
 
         var subscriptions = await _subscriptionRepository.GetByUserIdsActiveAsync(userIds, cancellationToken);
+        _logger.LogInformation("[WebPush] SendToUsersAsync, found {Count} subscriptions", subscriptions.Count);
         await SendToSubscriptionsAsync(subscriptions, title, body, data, cancellationToken);
     }
 
     public async Task SendToTenantAsync(Guid tenantId, string title, string body, object? data = null, CancellationToken cancellationToken = default)
     {
-        if (!_settings.Enabled) return;
+        if (!_settings.Enabled)
+        {
+            _logger.LogWarning("[WebPush] Push is DISABLED, skipping SendToTenantAsync for tenant {TenantId}", tenantId);
+            return;
+        }
 
+        _logger.LogInformation("[WebPush] SendToTenantAsync for tenant {TenantId}, title: {Title}", tenantId, title);
         var subscriptions = await _subscriptionRepository.GetByTenantIdActiveAsync(tenantId, cancellationToken);
+        _logger.LogInformation("[WebPush] Found {Count} active subscriptions for tenant {TenantId}", subscriptions.Count, tenantId);
         await SendToSubscriptionsAsync(subscriptions, title, body, data, cancellationToken);
     }
 
     private async Task SendToSubscriptionsAsync(IReadOnlyList<Domain.Entities.PushSubscription> subscriptions, string title, string body, object? data, CancellationToken cancellationToken)
     {
-        if (subscriptions.Count == 0) return;
+        if (subscriptions.Count == 0)
+        {
+            _logger.LogWarning("[WebPush] No active subscriptions found, nothing to send");
+            return;
+        }
 
         var payload = JsonSerializer.Serialize(new { title, body, data }, _jsonOptions);
+        _logger.LogInformation("[WebPush] Sending to {Count} subscriptions, payload: {Payload}", subscriptions.Count, payload);
         var needsSave = false;
 
         foreach (var sub in subscriptions)
@@ -110,18 +139,38 @@ public class WebPushService : IWebPushService
                     Keys = { ["p256dh"] = sub.P256dhKey, ["auth"] = sub.AuthKey }
                 };
 
-                var message = new PushMessage(payload) { Urgency = PushMessageUrgency.High };
+                // Derive topic from endpoint origin (required by Apple Web Push)
+                var endpointUri = new Uri(sub.Endpoint);
+                var topic = endpointUri.Host.Contains("apple") ? _settings.VapidSubject : null;
+
+                var message = new PushMessage(payload)
+                {
+                    Urgency = PushMessageUrgency.High,
+                    Topic = topic
+                };
+
+                _logger.LogInformation("[WebPush] Sending to user {UserId}, endpoint: {Endpoint}, topic: {Topic}",
+                    sub.UserId, sub.Endpoint[..Math.Min(80, sub.Endpoint.Length)], topic ?? "(none)");
+
                 await _client.RequestPushMessageDeliveryAsync(pushSubscription, message, cancellationToken);
+                _logger.LogInformation("[WebPush] Successfully sent to user {UserId}", sub.UserId);
             }
             catch (PushServiceClientException ex) when (ex.StatusCode == HttpStatusCode.Gone || ex.StatusCode == HttpStatusCode.NotFound)
             {
-                _logger.LogInformation("Push subscription expired for user {UserId}, endpoint {Endpoint}", sub.UserId, sub.Endpoint);
+                _logger.LogWarning("[WebPush] Subscription expired ({StatusCode}) for user {UserId}, endpoint {Endpoint}",
+                    ex.StatusCode, sub.UserId, sub.Endpoint[..Math.Min(80, sub.Endpoint.Length)]);
                 sub.Deactivate();
                 needsSave = true;
             }
+            catch (PushServiceClientException ex)
+            {
+                _logger.LogError(ex, "[WebPush] PushServiceClientException for user {UserId}: StatusCode={StatusCode}, Headers={Headers}",
+                    sub.UserId, ex.StatusCode, ex.Message);
+            }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to send push notification to user {UserId}, endpoint {Endpoint}", sub.UserId, sub.Endpoint);
+                _logger.LogError(ex, "[WebPush] Failed to send to user {UserId}, endpoint {Endpoint}",
+                    sub.UserId, sub.Endpoint[..Math.Min(80, sub.Endpoint.Length)]);
             }
         }
 
