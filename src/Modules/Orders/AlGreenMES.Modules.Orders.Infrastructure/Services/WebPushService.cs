@@ -136,7 +136,11 @@ public class WebPushService : IWebPushService
                 var pushSubscription = new Lib.Net.Http.WebPush.PushSubscription
                 {
                     Endpoint = sub.Endpoint,
-                    Keys = { ["p256dh"] = sub.P256dhKey, ["auth"] = sub.AuthKey }
+                    Keys = new Dictionary<string, string>
+                    {
+                        ["p256dh"] = sub.P256dhKey,
+                        ["auth"] = sub.AuthKey
+                    }
                 };
 
                 // Derive topic from endpoint origin (required by Apple Web Push)
