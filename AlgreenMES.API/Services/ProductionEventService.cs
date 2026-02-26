@@ -123,17 +123,47 @@ public class ProductionEventService : IProductionEventService
         await _hubContext.Clients.Group($"tenant-{evt.TenantId}")
             .SendAsync("BlockRequestApproved", evt, cancellationToken);
 
+        var title = "Zahtev odobren";
+        var message = "Zahtev za blokadu je odobren";
+
         await _webPushService.SendToTenantAsync(evt.TenantId,
-            "Zahtev odobren",
-            "Zahtev za blokadu je odobren",
+            title, message,
             new { type = "BlockRequestApproved", evt.BlockRequestId },
             cancellationToken);
 
+        // Notify dashboard users
         await CreateNotificationsForDashboardUsersAsync(evt.TenantId,
             NotificationType.BlockRequestApproved,
-            "Zahtev odobren",
-            "Zahtev za blokadu je odobren",
+            title, message,
             "BlockRequest", evt.BlockRequestId, cancellationToken);
+
+        // Also notify the requesting worker
+        var workerNotification = Notification.Create(evt.TenantId, evt.RequestedByUserId,
+            NotificationType.BlockRequestApproved, title, message,
+            "BlockRequest", evt.BlockRequestId);
+        await _notificationRepository.AddAsync(workerNotification, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task NotifyBlockRequestRejectedAsync(BlockRequestRejectedEvent evt, CancellationToken cancellationToken = default)
+    {
+        var title = "Zahtev odbijen";
+        var message = string.IsNullOrWhiteSpace(evt.RejectionNote)
+            ? "Vaš zahtev za blokadu je odbijen"
+            : $"Vaš zahtev za blokadu je odbijen: {evt.RejectionNote}";
+
+        // Send push to the requesting worker
+        await _webPushService.SendToUsersAsync(
+            [evt.RequestedByUserId], title, message,
+            new { type = "BlockRequestRejected", evt.BlockRequestId },
+            cancellationToken);
+
+        // Create in-app notification for the requesting worker
+        var notification = Notification.Create(evt.TenantId, evt.RequestedByUserId,
+            NotificationType.BlockRequestRejected, title, message,
+            "BlockRequest", evt.BlockRequestId);
+        await _notificationRepository.AddAsync(notification, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task NotifyWorkerCheckedInAsync(WorkerCheckedInEvent evt, CancellationToken cancellationToken = default)

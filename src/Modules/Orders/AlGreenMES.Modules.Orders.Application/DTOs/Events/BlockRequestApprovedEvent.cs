@@ -5,4 +5,5 @@ public record BlockRequestApprovedEvent(
     Guid? OrderItemProcessId,
     Guid? OrderItemSubProcessId,
     string BlockReason,
-    Guid TenantId);
+    Guid TenantId,
+    Guid RequestedByUserId);

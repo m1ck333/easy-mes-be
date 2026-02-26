@@ -1,5 +1,6 @@
 using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Orders.Application.DTOs;
+using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
 using Mapster;
@@ -11,11 +12,16 @@ public class RejectBlockRequestCommandHandler : IRequestHandler<RejectBlockReque
 {
     private readonly IBlockRequestRepository _blockRequestRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
+    private readonly IProductionEventService _eventService;
 
-    public RejectBlockRequestCommandHandler(IBlockRequestRepository blockRequestRepository, IOrdersUnitOfWork unitOfWork)
+    public RejectBlockRequestCommandHandler(
+        IBlockRequestRepository blockRequestRepository,
+        IOrdersUnitOfWork unitOfWork,
+        IProductionEventService eventService)
     {
         _blockRequestRepository = blockRequestRepository;
         _unitOfWork = unitOfWork;
+        _eventService = eventService;
     }
 
     public async Task<BlockRequestDto> Handle(RejectBlockRequestCommand request, CancellationToken cancellationToken)
@@ -26,6 +32,13 @@ public class RejectBlockRequestCommandHandler : IRequestHandler<RejectBlockReque
 
         blockRequest.Reject(request.HandledByUserId, request.RejectionNote);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _eventService.NotifyBlockRequestRejectedAsync(
+            new BlockRequestRejectedEvent(
+                blockRequest.Id,
+                blockRequest.RequestedByUserId,
+                request.RejectionNote,
+                blockRequest.TenantId), cancellationToken);
 
         return blockRequest.Adapt<BlockRequestDto>();
     }

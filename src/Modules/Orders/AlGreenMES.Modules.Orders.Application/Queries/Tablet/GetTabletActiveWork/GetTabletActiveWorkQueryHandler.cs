@@ -59,11 +59,15 @@ public class GetTabletActiveWorkQueryHandler : IRequestHandler<GetTabletActiveWo
                         sp.Status == SubProcessStatus.InProgress && sp.GetOpenLog() != null
                     )).ToList();
 
+                    // Sum sub-process durations (process-level TotalDurationMinutes is only set on completion)
+                    var totalDuration = process.SubProcesses.Sum(sp => sp.TotalDurationMinutes);
+
                     var dto = process.Adapt<TabletActiveWorkDto>() with
                     {
                         SpecialRequestNames = specialRequestNames,
                         CompletedProcessCount = completedCount,
                         TotalProcessCount = totalCount,
+                        TotalDurationMinutes = totalDuration,
                         IsTimerRunning = isTimerRunning,
                         SubProcesses = subDtos
                     };
