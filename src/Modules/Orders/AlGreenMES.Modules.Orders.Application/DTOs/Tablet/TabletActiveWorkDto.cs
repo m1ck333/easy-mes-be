@@ -15,6 +15,7 @@ public record TabletActiveWorkDto(
     ProcessStatus Status,
     DateTime? StartedAt,
     int TotalDurationMinutes,
+    bool IsTimerRunning,
     List<string> SpecialRequestNames,
     int CompletedProcessCount,
     int TotalProcessCount,
@@ -25,4 +26,5 @@ public record TabletSubProcessDto(
     Guid SubProcessId,
     SubProcessStatus Status,
     int TotalDurationMinutes,
-    bool IsWithdrawn);
+    bool IsWithdrawn,
+    bool IsTimerRunning);
