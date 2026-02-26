@@ -16,6 +16,7 @@ public record TabletActiveWorkDto(
     DateTime? StartedAt,
     int TotalDurationMinutes,
     bool IsTimerRunning,
+    DateTime? CurrentLogStartedAt,
     List<string> SpecialRequestNames,
     int CompletedProcessCount,
     int TotalProcessCount,
