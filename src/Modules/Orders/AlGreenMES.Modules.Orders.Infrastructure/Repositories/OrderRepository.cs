@@ -71,6 +71,7 @@ public class OrderRepository : IOrderRepository
             .Include(o => o.Items)
                 .ThenInclude(i => i.Processes)
                     .ThenInclude(p => p.SubProcesses)
+                        .ThenInclude(sp => sp.Logs)
             .Include(o => o.Items)
                 .ThenInclude(i => i.SpecialRequests)
             .Where(o => o.TenantId == tenantId && o.Status == OrderStatus.Active)
