@@ -3,4 +3,11 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Commands.UpdateProcess;
 
-public record UpdateProcessCommand(Guid Id, string Name, int SequenceOrder) : IRequest<ProcessDto>;
+public record UpdateProcessSubProcessAdd(string Name, int SequenceOrder);
+
+public record UpdateProcessCommand(
+    Guid Id,
+    string Name,
+    int SequenceOrder,
+    List<UpdateProcessSubProcessAdd>? AddSubProcesses = null,
+    List<Guid>? DeactivateSubProcessIds = null) : IRequest<ProcessDto>;

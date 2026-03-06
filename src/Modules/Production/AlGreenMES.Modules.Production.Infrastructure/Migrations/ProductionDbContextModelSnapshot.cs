@@ -46,9 +46,7 @@ namespace AlGreenMES.Modules.Production.Infrastructure.Migrations
                         .HasColumnName("created_by_user_id");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
                     b.Property<string>("Name")
@@ -104,9 +102,7 @@ namespace AlGreenMES.Modules.Production.Infrastructure.Migrations
                         .HasColumnName("description");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
                     b.Property<string>("Name")
@@ -140,7 +136,6 @@ namespace AlGreenMES.Modules.Production.Infrastructure.Migrations
             modelBuilder.Entity("AlGreenMES.Modules.Production.Domain.Entities.ProductCategoryDependency", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -183,7 +178,6 @@ namespace AlGreenMES.Modules.Production.Infrastructure.Migrations
             modelBuilder.Entity("AlGreenMES.Modules.Production.Domain.Entities.ProductCategoryProcess", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -257,15 +251,11 @@ namespace AlGreenMES.Modules.Production.Infrastructure.Migrations
                         .HasColumnName("description");
 
                     b.Property<bool>("IgnoresDependencies")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(false)
                         .HasColumnName("ignores_dependencies");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
                     b.Property<string>("Name")
@@ -322,9 +312,7 @@ namespace AlGreenMES.Modules.Production.Infrastructure.Migrations
                         .HasColumnName("created_by_user_id");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
                     b.Property<string>("Name")
@@ -358,7 +346,8 @@ namespace AlGreenMES.Modules.Production.Infrastructure.Migrations
 
                     b.HasIndex("ProcessId", "SequenceOrder")
                         .IsUnique()
-                        .HasDatabaseName("ix_sub_processes_process_id_sequence_order");
+                        .HasDatabaseName("ix_sub_processes_process_id_sequence_order")
+                        .HasFilter("is_active = true");
 
                     b.ToTable("sub_processes", "production");
                 });

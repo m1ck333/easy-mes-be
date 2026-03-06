@@ -50,7 +50,7 @@ public class TenantRepository : ITenantRepository
             .AnyAsync(t => t.Code == normalizedCode, cancellationToken);
     }
 
-    public async Task<PagedResult<Tenant>> GetPagedAsync(bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Tenant>> GetPagedAsync(bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Tenants.AsQueryable();
 
@@ -62,6 +62,11 @@ public class TenantRepository : ITenantRepository
             var s = search.ToLower();
             query = query.Where(t => t.Name.ToLower().Contains(s) || t.Code.ToLower().Contains(s));
         }
+
+        if (createdFrom.HasValue)
+            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        if (createdTo.HasValue)
+            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
 
         query = query.OrderBy(t => t.Name);
 

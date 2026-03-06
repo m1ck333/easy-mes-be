@@ -6,4 +6,6 @@ public record ShiftDto(
     string Name,
     TimeOnly StartTime,
     TimeOnly EndTime,
-    bool IsActive);
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);

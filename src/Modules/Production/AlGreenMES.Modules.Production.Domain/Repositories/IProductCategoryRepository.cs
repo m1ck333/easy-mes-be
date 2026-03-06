@@ -10,5 +10,5 @@ public interface IProductCategoryRepository
     Task<IReadOnlyList<ProductCategory>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
     Task AddAsync(ProductCategory category, CancellationToken cancellationToken = default);
     Task<bool> ExistsByNameAsync(string name, Guid tenantId, CancellationToken cancellationToken = default);
-    Task<PagedResult<ProductCategory>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<PagedResult<ProductCategory>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default);
 }

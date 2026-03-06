@@ -12,6 +12,7 @@ public class ProductCategoryProcessConfiguration : IEntityTypeConfiguration<Prod
         builder.ToTable("product_category_processes");
 
         builder.HasKey(p => p.Id);
+        builder.Property(p => p.Id).ValueGeneratedNever();
 
         builder.Property(p => p.DefaultComplexity)
             .HasConversion<string>()

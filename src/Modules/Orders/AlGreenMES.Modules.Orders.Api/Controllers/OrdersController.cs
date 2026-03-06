@@ -107,14 +107,18 @@ public class OrdersController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin,Manager,SalesManager")]
-    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request, CancellationToken cancellationToken)
+    [RequestSizeLimit(50 * 1024 * 1024)]
+    public async Task<IActionResult> CreateOrder([FromForm] CreateOrderRequest request, CancellationToken cancellationToken)
     {
         var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
             ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new UnauthorizedAccessException("User ID claim not found in token."));
 
         var result = await _mediator.Send(
-            new CreateOrderCommand(request.TenantId, request.OrderNumber, request.DeliveryDate, request.Priority, request.OrderType, userId, request.Notes),
+            new CreateOrderCommand(
+                request.TenantId, request.OrderNumber, request.DeliveryDate, request.Priority, request.OrderType, userId, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
+                request.Items?.Select(i => new Application.Commands.CreateOrder.CreateOrderItemInput(i.ProductCategoryId, i.ProductName, i.Quantity, i.Notes)).ToList(),
+                request.Attachments?.Select(f => new Application.Commands.CreateOrder.CreateOrderAttachmentInput(f.FileName, f.ContentType, f.Length, f.OpenReadStream())).ToList()),
             cancellationToken);
         return CreatedAtAction(nameof(GetOrderById), new { id = result.Id }, result);
     }
@@ -124,7 +128,13 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> UpdateOrder(Guid id, [FromBody] UpdateOrderRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new UpdateOrderCommand(id, request.Notes, request.CustomWarningDays, request.CustomCriticalDays),
+            new UpdateOrderCommand(
+                id, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
+                request.AddItems?.Select(i => new Application.Commands.UpdateOrder.UpdateOrderItemInput(i.ProductCategoryId, i.ProductName, i.Quantity, i.Notes)).ToList(),
+                request.RemoveItemIds,
+                request.ComplexityOverrides?.Select(c => new Application.Commands.UpdateOrder.UpdateOrderComplexityInput(c.ItemId, c.ProcessId, c.Complexity)).ToList(),
+                request.AddSpecialRequests?.Select(s => new Application.Commands.UpdateOrder.UpdateOrderSpecialRequestAdd(s.ItemId, s.SpecialRequestTypeId)).ToList(),
+                request.RemoveSpecialRequests?.Select(s => new Application.Commands.UpdateOrder.UpdateOrderSpecialRequestRemove(s.ItemId, s.SpecialRequestId)).ToList()),
             cancellationToken);
         return Ok(result);
     }

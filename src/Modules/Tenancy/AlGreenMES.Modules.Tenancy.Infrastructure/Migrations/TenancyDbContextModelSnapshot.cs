@@ -73,6 +73,10 @@ namespace AlGreenMES.Modules.Tenancy.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
                     b.Property<string>("CriticalColor")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -96,6 +100,10 @@ namespace AlGreenMES.Modules.Tenancy.Infrastructure.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<string>("WarningColor")
                         .IsRequired()

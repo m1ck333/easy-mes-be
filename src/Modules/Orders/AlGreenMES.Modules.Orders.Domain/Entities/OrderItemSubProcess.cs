@@ -17,6 +17,9 @@ public class OrderItemSubProcess : TenantEntity
     public Guid? StoppedByUserId { get; private set; }
     public string? StoppedReason { get; private set; }
 
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; private set; }
+
     public OrderItemProcess OrderItemProcess { get; private set; } = null!;
 
     private readonly List<OrderItemSubProcessLog> _logs = new();
@@ -42,11 +45,13 @@ public class OrderItemSubProcess : TenantEntity
         if (Status != SubProcessStatus.Pending)
             throw new DomainException("INVALID_STATUS", "Can only start pending sub-processes.");
         Status = SubProcessStatus.InProgress;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Complete()
     {
         Status = SubProcessStatus.Completed;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Stop(Guid userId, string reason)
@@ -54,6 +59,7 @@ public class OrderItemSubProcess : TenantEntity
         Status = SubProcessStatus.Stopped;
         StoppedByUserId = userId;
         StoppedReason = reason;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Withdraw(Guid userId, string reason)
@@ -63,11 +69,13 @@ public class OrderItemSubProcess : TenantEntity
         WithdrawnByUserId = userId;
         WithdrawnReason = reason;
         Status = SubProcessStatus.Withdrawn;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void AddDuration(int minutes)
     {
         TotalDurationMinutes += minutes;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public OrderItemSubProcessLog StartLog(Guid userId)

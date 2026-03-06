@@ -56,7 +56,7 @@ public class UserRepository : IUserRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<User>> GetPagedAsync(Guid tenantId, UserRole? role, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<User>> GetPagedAsync(Guid tenantId, UserRole? role, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Users.Where(u => u.TenantId == tenantId);
 
@@ -71,6 +71,11 @@ public class UserRepository : IUserRepository
             var s = search.ToLower();
             query = query.Where(u => u.FirstName.ToLower().Contains(s) || u.LastName.ToLower().Contains(s) || u.Email.ToLower().Contains(s));
         }
+
+        if (createdFrom.HasValue)
+            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        if (createdTo.HasValue)
+            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
 
         query = query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName);
 

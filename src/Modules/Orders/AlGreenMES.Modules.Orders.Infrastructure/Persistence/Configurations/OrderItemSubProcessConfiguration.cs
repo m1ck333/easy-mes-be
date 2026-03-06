@@ -30,6 +30,9 @@ public class OrderItemSubProcessConfiguration : IEntityTypeConfiguration<OrderIt
         builder.Property(sp => sp.StoppedReason)
             .HasMaxLength(2000);
 
+        builder.Property(sp => sp.CreatedAt)
+            .IsRequired();
+
         builder.HasIndex(sp => new { sp.OrderItemProcessId, sp.SubProcessId })
             .IsUnique();
 

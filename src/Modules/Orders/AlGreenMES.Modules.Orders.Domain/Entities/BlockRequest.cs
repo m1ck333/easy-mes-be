@@ -12,6 +12,7 @@ public class BlockRequest : TenantEntity
     public string? RequestNote { get; private set; }
     public RequestStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; private set; }
     public Guid? HandledByUserId { get; private set; }
     public DateTime? HandledAt { get; private set; }
     public string? BlockReason { get; private set; }
@@ -61,6 +62,7 @@ public class BlockRequest : TenantEntity
         HandledByUserId = handledByUserId;
         HandledAt = DateTime.UtcNow;
         BlockReason = blockReason.Trim();
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Reject(Guid handledByUserId, string? rejectionNote)
@@ -72,5 +74,6 @@ public class BlockRequest : TenantEntity
         HandledByUserId = handledByUserId;
         HandledAt = DateTime.UtcNow;
         RejectionNote = rejectionNote?.Trim();
+        UpdatedAt = DateTime.UtcNow;
     }
 }

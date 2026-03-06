@@ -8,6 +8,8 @@ public class TenantSettings
     public int DefaultCriticalDays { get; private set; }
     public string WarningColor { get; private set; } = null!;
     public string CriticalColor { get; private set; } = null!;
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; private set; }
 
     public Tenant Tenant { get; private set; } = null!;
 
@@ -34,5 +36,6 @@ public class TenantSettings
         DefaultCriticalDays = defaultCriticalDays;
         WarningColor = warningColor;
         CriticalColor = criticalColor;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

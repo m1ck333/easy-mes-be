@@ -19,6 +19,7 @@ public class GetProcessesQueryHandler : IRequestHandler<GetProcessesQuery, Paged
     {
         var result = await _processRepository.GetPagedAsync(
             request.TenantId, request.IsActive, request.Search,
+            request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
         return result.MapItems(p => p.Adapt<ProcessDto>());

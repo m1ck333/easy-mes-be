@@ -1,4 +1,5 @@
 using AlGreenMES.Modules.Production.Api.Requests;
+using AlGreenMES.Modules.Production.Application.Commands.ActivateProcess;
 using AlGreenMES.Modules.Production.Application.Commands.AddSubProcess;
 using AlGreenMES.Modules.Production.Application.Commands.CreateProcess;
 using AlGreenMES.Modules.Production.Application.Commands.DeactivateProcess;
@@ -32,6 +33,8 @@ public class ProcessesController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
+        [FromQuery] DateTime? createdFrom = null,
+        [FromQuery] DateTime? createdTo = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetProcessesQuery
@@ -40,7 +43,9 @@ public class ProcessesController : ControllerBase
             IsActive = isActive,
             Page = page,
             PageSize = pageSize,
-            Search = search
+            Search = search,
+            CreatedFrom = createdFrom,
+            CreatedTo = createdTo
         }, cancellationToken);
         return Ok(result);
     }
@@ -57,7 +62,9 @@ public class ProcessesController : ControllerBase
     public async Task<IActionResult> CreateProcess([FromBody] CreateProcessRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new CreateProcessCommand(request.TenantId, request.Code, request.Name, request.SequenceOrder, null),
+            new CreateProcessCommand(
+                request.TenantId, request.Code, request.Name, request.SequenceOrder, null,
+                request.SubProcesses?.Select(s => new CreateProcessSubProcessItem(s.Name, s.SequenceOrder)).ToList()),
             cancellationToken);
         return CreatedAtAction(nameof(GetProcessById), new { id = result.Id }, result);
     }
@@ -67,7 +74,10 @@ public class ProcessesController : ControllerBase
     public async Task<IActionResult> UpdateProcess(Guid id, [FromBody] UpdateProcessRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new UpdateProcessCommand(id, request.Name, request.SequenceOrder),
+            new UpdateProcessCommand(
+                id, request.Name, request.SequenceOrder,
+                request.AddSubProcesses?.Select(s => new UpdateProcessSubProcessAdd(s.Name, s.SequenceOrder)).ToList(),
+                request.DeactivateSubProcessIds),
             cancellationToken);
         return Ok(result);
     }
@@ -77,6 +87,14 @@ public class ProcessesController : ControllerBase
     public async Task<IActionResult> DeactivateProcess(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeactivateProcessCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/activate")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ActivateProcess(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new ActivateProcessCommand(id), cancellationToken);
         return NoContent();
     }
 

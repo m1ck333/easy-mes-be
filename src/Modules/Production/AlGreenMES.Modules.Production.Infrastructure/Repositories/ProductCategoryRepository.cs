@@ -53,7 +53,7 @@ public class ProductCategoryRepository : IProductCategoryRepository
             .AnyAsync(c => c.Name == normalizedName && c.TenantId == tenantId, cancellationToken);
     }
 
-    public async Task<PagedResult<ProductCategory>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ProductCategory>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.ProductCategories.Where(pc => pc.TenantId == tenantId);
 
@@ -62,6 +62,11 @@ public class ProductCategoryRepository : IProductCategoryRepository
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(pc => pc.Name.Contains(search));
+
+        if (createdFrom.HasValue)
+            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        if (createdTo.HasValue)
+            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
 
         query = query.OrderBy(pc => pc.Name);
 

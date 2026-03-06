@@ -86,7 +86,23 @@ public class ProductCategory : AuditableEntity
         _dependencies.Remove(dep);
     }
 
+    public void ReplaceProcesses(IEnumerable<(Guid processId, int sequenceOrder, ComplexityType? defaultComplexity)> processes)
+    {
+        _processes.Clear();
+        _dependencies.Clear();
+        foreach (var (processId, sequenceOrder, defaultComplexity) in processes)
+            _processes.Add(new ProductCategoryProcess(TenantId, Id, processId, sequenceOrder, defaultComplexity));
+    }
+
+    public void ReplaceDependencies(IEnumerable<(Guid processId, Guid dependsOnProcessId)> dependencies)
+    {
+        _dependencies.Clear();
+        foreach (var (processId, dependsOnProcessId) in dependencies)
+            AddDependency(processId, dependsOnProcessId);
+    }
+
     public void Deactivate() => IsActive = false;
+    public void Activate() => IsActive = true;
 
     private bool WouldCreateCircularDependency(Guid processId, Guid dependsOnId)
     {

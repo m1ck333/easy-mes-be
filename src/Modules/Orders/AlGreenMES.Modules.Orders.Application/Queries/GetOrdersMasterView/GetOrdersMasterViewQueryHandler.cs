@@ -52,7 +52,8 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             completedProcesses,
             totalProcesses,
             processStatuses,
-            order.Attachments.Count);
+            order.Attachments.Count,
+            order.CreatedAt);
     }
 
     private static ProcessStatus AggregateStatus(IGrouping<Guid, OrderItemProcess> group)

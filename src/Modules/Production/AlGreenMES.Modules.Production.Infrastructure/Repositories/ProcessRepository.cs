@@ -49,7 +49,7 @@ public class ProcessRepository : IProcessRepository
             .AnyAsync(p => p.Code == normalizedCode && p.TenantId == tenantId, cancellationToken);
     }
 
-    public async Task<PagedResult<Process>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Process>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Processes
             .Include(p => p.SubProcesses)
@@ -63,6 +63,11 @@ public class ProcessRepository : IProcessRepository
             var s = search.ToLower();
             query = query.Where(p => p.Name.ToLower().Contains(s) || p.Code.ToLower().Contains(s));
         }
+
+        if (createdFrom.HasValue)
+            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        if (createdTo.HasValue)
+            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
 
         query = query.OrderBy(p => p.SequenceOrder);
 

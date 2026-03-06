@@ -12,6 +12,7 @@ public class WorkSession : TenantEntity
     public int? DurationMinutes { get; private set; }
     public DateOnly Date { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; private set; }
 
     public bool IsActive => !CheckOutTime.HasValue;
 
@@ -37,5 +38,6 @@ public class WorkSession : TenantEntity
             throw new DomainException("ALREADY_CHECKED_OUT", "Already checked out.");
         CheckOutTime = DateTime.UtcNow;
         DurationMinutes = (int)(CheckOutTime.Value - CheckInTime).TotalMinutes;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

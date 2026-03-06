@@ -1,4 +1,5 @@
 using AlGreenMES.Modules.Production.Api.Requests;
+using AlGreenMES.Modules.Production.Application.Commands.ActivateSpecialRequestType;
 using AlGreenMES.Modules.Production.Application.Commands.CreateSpecialRequestType;
 using AlGreenMES.Modules.Production.Application.Commands.DeactivateSpecialRequestType;
 using AlGreenMES.Modules.Production.Application.Commands.UpdateSpecialRequestType;
@@ -28,6 +29,8 @@ public class SpecialRequestTypesController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
+        [FromQuery] DateTime? createdFrom = null,
+        [FromQuery] DateTime? createdTo = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetSpecialRequestTypesQuery
@@ -36,7 +39,9 @@ public class SpecialRequestTypesController : ControllerBase
             IsActive = isActive,
             Page = page,
             PageSize = pageSize,
-            Search = search
+            Search = search,
+            CreatedFrom = createdFrom,
+            CreatedTo = createdTo
         }, cancellationToken);
         return Ok(result);
     }
@@ -70,6 +75,14 @@ public class SpecialRequestTypesController : ControllerBase
     public async Task<IActionResult> DeactivateSpecialRequestType(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeactivateSpecialRequestTypeCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/activate")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ActivateSpecialRequestType(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new ActivateSpecialRequestTypeCommand(id), cancellationToken);
         return NoContent();
     }
 }

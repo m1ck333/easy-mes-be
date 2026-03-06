@@ -40,7 +40,7 @@ public class BlockRequestRepository : IBlockRequestRepository
         await _dbContext.BlockRequests.AddAsync(request, cancellationToken);
     }
 
-    public async Task<PagedResult<BlockRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<BlockRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.BlockRequests.Where(br => br.TenantId == tenantId);
 
@@ -49,6 +49,11 @@ public class BlockRequestRepository : IBlockRequestRepository
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(br => br.RequestNote != null && br.RequestNote.Contains(search));
+
+        if (createdFrom.HasValue)
+            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        if (createdTo.HasValue)
+            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
 
         query = query.OrderByDescending(br => br.CreatedAt);
 

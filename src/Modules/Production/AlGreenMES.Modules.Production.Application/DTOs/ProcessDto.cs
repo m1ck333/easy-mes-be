@@ -7,4 +7,6 @@ public record ProcessDto(
     string Name,
     int SequenceOrder,
     bool IsActive,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     List<SubProcessDto> SubProcesses);

@@ -41,6 +41,9 @@ public class OrderItemProcessConfiguration : IEntityTypeConfiguration<OrderItemP
         builder.Property(p => p.StoppedReason)
             .HasMaxLength(2000);
 
+        builder.Property(p => p.CreatedAt)
+            .IsRequired();
+
         builder.HasIndex(p => new { p.OrderItemId, p.ProcessId })
             .IsUnique();
 

@@ -31,6 +31,9 @@ public class OrderItemProcess : TenantEntity
     public Guid? StoppedByUserId { get; private set; }
     public string? StoppedReason { get; private set; }
 
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; private set; }
+
     public OrderItem OrderItem { get; private set; } = null!;
 
     private readonly List<OrderItemSubProcess> _subProcesses = new();
@@ -60,6 +63,7 @@ public class OrderItemProcess : TenantEntity
             throw new DomainException("INVALID_STATUS", "Can only start pending processes.");
         Status = ProcessStatus.InProgress;
         StartedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Complete()
@@ -68,6 +72,7 @@ public class OrderItemProcess : TenantEntity
             throw new DomainException("SUBPROCESSES_NOT_COMPLETE", "All sub-processes must be completed first.");
         Status = ProcessStatus.Completed;
         CompletedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Block(Guid userId, string reason)
@@ -78,6 +83,7 @@ public class OrderItemProcess : TenantEntity
         BlockedAt = DateTime.UtcNow;
         BlockedByUserId = userId;
         BlockReason = reason;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Unblock(Guid userId)
@@ -87,6 +93,7 @@ public class OrderItemProcess : TenantEntity
         Status = StartedAt.HasValue ? ProcessStatus.InProgress : ProcessStatus.Pending;
         UnblockedAt = DateTime.UtcNow;
         UnblockedByUserId = userId;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Stop(Guid userId, string reason)
@@ -97,6 +104,7 @@ public class OrderItemProcess : TenantEntity
         StoppedAt = DateTime.UtcNow;
         StoppedByUserId = userId;
         StoppedReason = reason;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Withdraw(Guid userId, string reason)
@@ -108,17 +116,20 @@ public class OrderItemProcess : TenantEntity
         WithdrawnByUserId = userId;
         WithdrawnReason = reason;
         Status = ProcessStatus.Withdrawn;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void AddDuration(int minutes)
     {
         TotalDurationMinutes += minutes;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void OverrideComplexity(ComplexityType complexity)
     {
         Complexity = complexity;
         ComplexityOverridden = true;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public OrderItemSubProcess AddSubProcess(Guid subProcessId)

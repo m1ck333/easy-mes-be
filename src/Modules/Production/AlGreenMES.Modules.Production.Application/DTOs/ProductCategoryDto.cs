@@ -5,7 +5,9 @@ public record ProductCategoryDto(
     Guid TenantId,
     string Name,
     string? Description,
-    bool IsActive);
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 public record ProductCategoryDetailDto(
     Guid Id,
@@ -13,5 +15,7 @@ public record ProductCategoryDetailDto(
     string Name,
     string? Description,
     bool IsActive,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     List<ProductCategoryProcessDto> Processes,
     List<ProductCategoryDependencyDto> Dependencies);

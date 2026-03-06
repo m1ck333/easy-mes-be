@@ -1,6 +1,19 @@
+using AlGreenMES.Modules.Production.Domain.Enums;
+
 namespace AlGreenMES.Modules.Production.Api.Requests;
 
 public record CreateProductCategoryRequest(
     Guid TenantId,
     string Name,
-    string? Description);
+    string? Description,
+    List<CategoryProcessInput>? Processes,
+    List<CategoryDependencyInput>? Dependencies);
+
+public record CategoryProcessInput(
+    Guid ProcessId,
+    int SequenceOrder,
+    ComplexityType? DefaultComplexity);
+
+public record CategoryDependencyInput(
+    Guid ProcessId,
+    Guid DependsOnProcessId);

@@ -48,7 +48,7 @@ public class ChangeRequestRepository : IChangeRequestRepository
         await _dbContext.ChangeRequests.AddAsync(request, cancellationToken);
     }
 
-    public async Task<PagedResult<ChangeRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, ChangeRequestType? requestType, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ChangeRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, ChangeRequestType? requestType, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.ChangeRequests.Where(cr => cr.TenantId == tenantId);
 
@@ -60,6 +60,11 @@ public class ChangeRequestRepository : IChangeRequestRepository
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(cr => cr.Description.Contains(search));
+
+        if (createdFrom.HasValue)
+            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        if (createdTo.HasValue)
+            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
 
         query = query.OrderByDescending(cr => cr.CreatedAt);
 

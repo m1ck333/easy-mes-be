@@ -47,7 +47,7 @@ public class Process : AuditableEntity
 
     public SubProcess AddSubProcess(string name, int sequenceOrder)
     {
-        if (_subProcesses.Any(sp => sp.SequenceOrder == sequenceOrder))
+        if (_subProcesses.Any(sp => sp.IsActive && sp.SequenceOrder == sequenceOrder))
             throw new DomainException("DUPLICATE_ORDER", $"Sub-process with order {sequenceOrder} already exists.");
 
         var subProcess = SubProcess.Create(TenantId, Id, name, sequenceOrder);

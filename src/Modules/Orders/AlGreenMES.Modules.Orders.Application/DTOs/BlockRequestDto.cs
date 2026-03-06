@@ -10,6 +10,7 @@ public record BlockRequestDto(
     string? RequestNote,
     RequestStatus Status,
     DateTime CreatedAt,
+    DateTime? UpdatedAt,
     Guid? HandledByUserId,
     DateTime? HandledAt,
     string? BlockReason,

@@ -10,6 +10,7 @@ public record ChangeRequestDto(
     string Description,
     RequestStatus Status,
     DateTime CreatedAt,
+    DateTime? UpdatedAt,
     Guid? HandledByUserId,
     DateTime? HandledAt,
     string? ResponseNote);

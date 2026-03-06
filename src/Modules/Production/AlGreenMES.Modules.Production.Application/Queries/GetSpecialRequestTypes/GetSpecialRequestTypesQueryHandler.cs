@@ -19,6 +19,7 @@ public class GetSpecialRequestTypesQueryHandler : IRequestHandler<GetSpecialRequ
     {
         var result = await _repository.GetPagedAsync(
             request.TenantId, request.IsActive, request.Search,
+            request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
         return result.MapItems(srt => srt.Adapt<SpecialRequestTypeDto>());

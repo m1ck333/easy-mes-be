@@ -79,6 +79,10 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
                     b.HasKey("Id")
                         .HasName("pk_block_requests");
 
@@ -147,6 +151,10 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.HasKey("Id")
                         .HasName("pk_change_requests");
@@ -462,6 +470,10 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("complexity_overridden");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
                     b.Property<bool>("IsWithdrawn")
                         .HasColumnType("boolean")
                         .HasColumnName("is_withdrawn");
@@ -512,6 +524,10 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                     b.Property<Guid?>("UnblockedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("unblocked_by_user_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<DateTime?>("WithdrawnAt")
                         .HasColumnType("timestamp with time zone")
@@ -579,6 +595,10 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
                     b.Property<bool>("IsWithdrawn")
                         .HasColumnType("boolean")
                         .HasColumnName("is_withdrawn");
@@ -614,6 +634,10 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("total_duration_minutes");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
                     b.Property<DateTime?>("WithdrawnAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("withdrawn_at");
@@ -640,7 +664,6 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
             modelBuilder.Entity("AlGreenMES.Modules.Orders.Domain.Entities.OrderItemSubProcessLog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -772,6 +795,10 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")

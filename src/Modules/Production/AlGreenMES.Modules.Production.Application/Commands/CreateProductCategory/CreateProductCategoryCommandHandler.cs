@@ -8,7 +8,7 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Production.Application.Commands.CreateProductCategory;
 
-public class CreateProductCategoryCommandHandler : IRequestHandler<CreateProductCategoryCommand, ProductCategoryDto>
+public class CreateProductCategoryCommandHandler : IRequestHandler<CreateProductCategoryCommand, ProductCategoryDetailDto>
 {
     private readonly IProductCategoryRepository _categoryRepository;
     private readonly IProductionUnitOfWork _unitOfWork;
@@ -19,7 +19,7 @@ public class CreateProductCategoryCommandHandler : IRequestHandler<CreateProduct
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ProductCategoryDto> Handle(CreateProductCategoryCommand request, CancellationToken cancellationToken)
+    public async Task<ProductCategoryDetailDto> Handle(CreateProductCategoryCommand request, CancellationToken cancellationToken)
     {
         var nameExists = await _categoryRepository.ExistsByNameAsync(request.Name, request.TenantId, cancellationToken);
         if (nameExists)
@@ -27,9 +27,23 @@ public class CreateProductCategoryCommandHandler : IRequestHandler<CreateProduct
 
         var category = ProductCategory.Create(request.TenantId, request.Name, request.Description, request.CreatedByUserId);
 
+        if (request.Processes is { Count: > 0 })
+        {
+            foreach (var proc in request.Processes)
+                category.AddProcess(proc.ProcessId, proc.SequenceOrder, proc.DefaultComplexity);
+        }
+
+        if (request.Dependencies is { Count: > 0 })
+        {
+            foreach (var dep in request.Dependencies)
+                category.AddDependency(dep.ProcessId, dep.DependsOnProcessId);
+        }
+
         await _categoryRepository.AddAsync(category, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return category.Adapt<ProductCategoryDto>();
+        // Reload with navigation properties for response mapping
+        var reloaded = await _categoryRepository.GetByIdWithDetailsAsync(category.Id, cancellationToken);
+        return reloaded!.Adapt<ProductCategoryDetailDto>();
     }
 }

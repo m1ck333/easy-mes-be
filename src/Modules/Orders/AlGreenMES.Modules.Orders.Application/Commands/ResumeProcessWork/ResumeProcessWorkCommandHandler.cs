@@ -35,7 +35,13 @@ public class ResumeProcessWorkCommandHandler : IRequestHandler<ResumeProcessWork
             .FirstOrDefault(sp => sp.Status == SubProcessStatus.InProgress);
 
         if (activeSubProcess == null)
+        {
+            // No sub-processes: nothing to resume (timer runs from process StartedAt)
+            if (!process.SubProcesses.Any(sp => !sp.IsWithdrawn))
+                return Unit.Value;
+
             throw new DomainException("NO_ACTIVE_SUBPROCESS", "No in-progress sub-process found to resume.");
+        }
 
         var existingOpenLog = activeSubProcess.GetOpenLog();
         if (existingOpenLog != null)

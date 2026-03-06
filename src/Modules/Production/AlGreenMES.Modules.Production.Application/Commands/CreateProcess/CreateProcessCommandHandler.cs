@@ -27,6 +27,12 @@ public class CreateProcessCommandHandler : IRequestHandler<CreateProcessCommand,
 
         var process = Process.Create(request.TenantId, request.Code, request.Name, request.SequenceOrder, request.CreatedByUserId);
 
+        if (request.SubProcesses is { Count: > 0 })
+        {
+            foreach (var sub in request.SubProcesses)
+                process.AddSubProcess(sub.Name, sub.SequenceOrder);
+        }
+
         await _processRepository.AddAsync(process, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -47,22 +47,38 @@ public class GetTabletActiveWorkQueryHandler : IRequestHandler<GetTabletActiveWo
                     if (process.ProcessId != request.ProcessId) continue;
                     if (process.Status != ProcessStatus.InProgress) continue;
 
-                    var activeSub = process.SubProcesses
-                        .FirstOrDefault(sp => sp.Status == SubProcessStatus.InProgress);
-                    var openLog = activeSub?.GetOpenLog();
-                    var isTimerRunning = openLog != null;
+                    var hasSubProcesses = process.SubProcesses.Any(sp => !sp.IsWithdrawn);
 
-                    var subDtos = process.SubProcesses.Select(sp => new TabletSubProcessDto(
-                        sp.Id,
-                        sp.SubProcessId,
-                        sp.Status,
-                        sp.TotalDurationMinutes,
-                        sp.IsWithdrawn,
-                        sp.Status == SubProcessStatus.InProgress && sp.GetOpenLog() != null
-                    )).ToList();
+                    bool isTimerRunning;
+                    DateTime? currentLogStartedAt;
+                    int totalDuration;
+                    List<TabletSubProcessDto> subDtos;
 
-                    // Sum sub-process durations (process-level TotalDurationMinutes is only set on completion)
-                    var totalDuration = process.SubProcesses.Sum(sp => sp.TotalDurationMinutes);
+                    if (hasSubProcesses)
+                    {
+                        var activeSub = process.SubProcesses
+                            .FirstOrDefault(sp => sp.Status == SubProcessStatus.InProgress);
+                        var openLog = activeSub?.GetOpenLog();
+                        isTimerRunning = openLog != null;
+                        currentLogStartedAt = openLog?.StartTime;
+                        totalDuration = process.SubProcesses.Sum(sp => sp.TotalDurationMinutes);
+                        subDtos = process.SubProcesses.Select(sp => new TabletSubProcessDto(
+                            sp.Id,
+                            sp.SubProcessId,
+                            sp.Status,
+                            sp.TotalDurationMinutes,
+                            sp.IsWithdrawn,
+                            sp.Status == SubProcessStatus.InProgress && sp.GetOpenLog() != null
+                        )).ToList();
+                    }
+                    else
+                    {
+                        // No sub-processes: timer runs from process StartedAt
+                        isTimerRunning = true;
+                        currentLogStartedAt = process.StartedAt;
+                        totalDuration = 0;
+                        subDtos = new List<TabletSubProcessDto>();
+                    }
 
                     var dto = process.Adapt<TabletActiveWorkDto>() with
                     {
@@ -71,7 +87,7 @@ public class GetTabletActiveWorkQueryHandler : IRequestHandler<GetTabletActiveWo
                         TotalProcessCount = totalCount,
                         TotalDurationMinutes = totalDuration,
                         IsTimerRunning = isTimerRunning,
-                        CurrentLogStartedAt = openLog?.StartTime,
+                        CurrentLogStartedAt = currentLogStartedAt,
                         SubProcesses = subDtos
                     };
                     result.Add(dto);

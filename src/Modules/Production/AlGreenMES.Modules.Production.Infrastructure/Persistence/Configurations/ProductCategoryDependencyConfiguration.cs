@@ -11,6 +11,7 @@ public class ProductCategoryDependencyConfiguration : IEntityTypeConfiguration<P
         builder.ToTable("product_category_dependencies");
 
         builder.HasKey(d => d.Id);
+        builder.Property(d => d.Id).ValueGeneratedNever();
 
         builder.Property(d => d.CreatedAt)
             .IsRequired();

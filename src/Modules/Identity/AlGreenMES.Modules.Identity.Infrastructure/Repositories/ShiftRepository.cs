@@ -34,7 +34,7 @@ public class ShiftRepository : IShiftRepository
         await _dbContext.Shifts.AddAsync(shift, cancellationToken);
     }
 
-    public async Task<PagedResult<Shift>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Shift>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Shifts.Where(s => s.TenantId == tenantId);
 
@@ -43,6 +43,11 @@ public class ShiftRepository : IShiftRepository
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(s => s.Name.Contains(search));
+
+        if (createdFrom.HasValue)
+            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        if (createdTo.HasValue)
+            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
 
         query = query.OrderBy(s => s.Name);
 

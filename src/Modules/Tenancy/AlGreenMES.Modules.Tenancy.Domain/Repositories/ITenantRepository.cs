@@ -10,5 +10,5 @@ public interface ITenantRepository
     Task<IReadOnlyList<Tenant>> GetAllAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Tenant tenant, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(string code, CancellationToken cancellationToken = default);
-    Task<PagedResult<Tenant>> GetPagedAsync(bool? isActive, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<PagedResult<Tenant>> GetPagedAsync(bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default);
 }

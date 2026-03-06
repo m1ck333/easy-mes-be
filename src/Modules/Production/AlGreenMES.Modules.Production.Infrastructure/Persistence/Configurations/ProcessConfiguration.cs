@@ -24,8 +24,7 @@ public class ProcessConfiguration : IEntityTypeConfiguration<Process>
             .IsRequired();
 
         builder.Property(p => p.IsActive)
-            .IsRequired()
-            .HasDefaultValue(true);
+            .IsRequired();
 
         builder.Property(p => p.CreatedAt)
             .IsRequired();

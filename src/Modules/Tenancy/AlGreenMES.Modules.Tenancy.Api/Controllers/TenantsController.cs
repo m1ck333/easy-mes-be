@@ -27,6 +27,8 @@ public class TenantsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
+        [FromQuery] DateTime? createdFrom = null,
+        [FromQuery] DateTime? createdTo = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetTenantsQuery
@@ -34,7 +36,9 @@ public class TenantsController : ControllerBase
             IsActive = isActive,
             Page = page,
             PageSize = pageSize,
-            Search = search
+            Search = search,
+            CreatedFrom = createdFrom,
+            CreatedTo = createdTo
         }, cancellationToken);
         return Ok(result);
     }
@@ -49,14 +53,20 @@ public class TenantsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateTenant([FromBody] CreateTenantRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new CreateTenantCommand(request.Name, request.Code), cancellationToken);
+        var result = await _mediator.Send(new CreateTenantCommand(
+            request.Name, request.Code,
+            request.DefaultWarningDays, request.DefaultCriticalDays,
+            request.WarningColor, request.CriticalColor), cancellationToken);
         return CreatedAtAction(nameof(GetTenantById), new { id = result.Id }, result);
     }
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateTenant(Guid id, [FromBody] UpdateTenantRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new UpdateTenantCommand(id, request.Name, request.IsActive), cancellationToken);
+        var result = await _mediator.Send(new UpdateTenantCommand(
+            id, request.Name, request.IsActive,
+            request.DefaultWarningDays, request.DefaultCriticalDays,
+            request.WarningColor, request.CriticalColor), cancellationToken);
         return Ok(result);
     }
 

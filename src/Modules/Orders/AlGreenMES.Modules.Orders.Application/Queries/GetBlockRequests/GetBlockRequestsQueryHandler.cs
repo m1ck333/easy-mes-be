@@ -19,6 +19,7 @@ public class GetBlockRequestsQueryHandler : IRequestHandler<GetBlockRequestsQuer
     {
         var result = await _blockRequestRepository.GetPagedAsync(
             request.TenantId, request.Status, request.Search,
+            request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
         return result.MapItems(b => b.Adapt<BlockRequestDto>());

@@ -17,6 +17,8 @@ public class ProductionDbContext : DbContext, IProductionUnitOfWork
     {
     }
 
+    public void ClearChangeTracker() => ChangeTracker.Clear();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

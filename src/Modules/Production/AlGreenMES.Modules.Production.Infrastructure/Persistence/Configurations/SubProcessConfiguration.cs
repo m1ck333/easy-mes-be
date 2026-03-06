@@ -20,13 +20,13 @@ public class SubProcessConfiguration : IEntityTypeConfiguration<SubProcess>
             .IsRequired();
 
         builder.Property(sp => sp.IsActive)
-            .IsRequired()
-            .HasDefaultValue(true);
+            .IsRequired();
 
         builder.Property(sp => sp.CreatedAt)
             .IsRequired();
 
         builder.HasIndex(sp => new { sp.ProcessId, sp.SequenceOrder })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("is_active = true");
     }
 }

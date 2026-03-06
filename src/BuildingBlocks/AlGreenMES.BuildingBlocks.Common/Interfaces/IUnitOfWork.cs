@@ -6,4 +6,5 @@ namespace AlGreenMES.BuildingBlocks.Common.Interfaces;
 public interface IUnitOfWork
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    void ClearChangeTracker() { }
 }

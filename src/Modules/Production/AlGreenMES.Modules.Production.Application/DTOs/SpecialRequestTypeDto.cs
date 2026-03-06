@@ -10,4 +10,6 @@ public record SpecialRequestTypeDto(
     List<Guid> RemovesProcesses,
     List<Guid> OnlyProcesses,
     bool IgnoresDependencies,
-    bool IsActive);
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);

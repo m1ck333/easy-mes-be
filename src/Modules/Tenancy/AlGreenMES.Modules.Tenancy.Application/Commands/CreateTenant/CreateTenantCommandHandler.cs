@@ -27,6 +27,15 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, T
 
         var tenant = Tenant.Create(request.Name, request.Code);
 
+        if (request.DefaultWarningDays.HasValue && tenant.Settings is not null)
+        {
+            tenant.Settings.Update(
+                request.DefaultWarningDays.Value,
+                request.DefaultCriticalDays ?? tenant.Settings.DefaultCriticalDays,
+                request.WarningColor ?? tenant.Settings.WarningColor,
+                request.CriticalColor ?? tenant.Settings.CriticalColor);
+        }
+
         await _tenantRepository.AddAsync(tenant, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

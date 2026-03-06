@@ -24,6 +24,16 @@ public class UpdateTenantCommandHandler : IRequestHandler<UpdateTenantCommand, T
             ?? throw new NotFoundException("Tenant", request.Id);
 
         tenant.Update(request.Name, request.IsActive);
+
+        if (request.DefaultWarningDays.HasValue && tenant.Settings is not null)
+        {
+            tenant.Settings.Update(
+                request.DefaultWarningDays.Value,
+                request.DefaultCriticalDays ?? tenant.Settings.DefaultCriticalDays,
+                request.WarningColor ?? tenant.Settings.WarningColor,
+                request.CriticalColor ?? tenant.Settings.CriticalColor);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return tenant.Adapt<TenantDto>();

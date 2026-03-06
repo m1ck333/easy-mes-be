@@ -19,6 +19,7 @@ public class GetShiftsQueryHandler : IRequestHandler<GetShiftsQuery, PagedResult
     {
         var result = await _shiftRepository.GetPagedAsync(
             request.TenantId, request.IsActive, request.Search,
+            request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
         return result.MapItems(s => s.Adapt<ShiftDto>());

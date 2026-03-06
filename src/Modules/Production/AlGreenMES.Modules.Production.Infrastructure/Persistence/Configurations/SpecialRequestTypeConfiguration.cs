@@ -33,12 +33,10 @@ public class SpecialRequestTypeConfiguration : IEntityTypeConfiguration<SpecialR
             .HasColumnType("jsonb");
 
         builder.Property(s => s.IgnoresDependencies)
-            .IsRequired()
-            .HasDefaultValue(false);
+            .IsRequired();
 
         builder.Property(s => s.IsActive)
-            .IsRequired()
-            .HasDefaultValue(true);
+            .IsRequired();
 
         builder.Property(s => s.CreatedAt)
             .IsRequired();

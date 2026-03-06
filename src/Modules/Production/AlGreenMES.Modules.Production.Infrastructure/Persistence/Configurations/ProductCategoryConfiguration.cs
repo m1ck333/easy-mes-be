@@ -20,8 +20,7 @@ public class ProductCategoryConfiguration : IEntityTypeConfiguration<ProductCate
             .HasMaxLength(500);
 
         builder.Property(c => c.IsActive)
-            .IsRequired()
-            .HasDefaultValue(true);
+            .IsRequired();
 
         builder.Property(c => c.CreatedAt)
             .IsRequired();

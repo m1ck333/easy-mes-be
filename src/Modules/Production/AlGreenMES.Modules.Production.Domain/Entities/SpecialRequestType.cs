@@ -60,4 +60,5 @@ public class SpecialRequestType : AuditableEntity
     }
 
     public void Deactivate() => IsActive = false;
+    public void Activate() => IsActive = true;
 }

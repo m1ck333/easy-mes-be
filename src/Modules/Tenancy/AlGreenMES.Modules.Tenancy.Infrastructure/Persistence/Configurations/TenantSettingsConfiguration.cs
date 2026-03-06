@@ -30,6 +30,9 @@ public class TenantSettingsConfiguration : IEntityTypeConfiguration<TenantSettin
             .HasMaxLength(20)
             .HasDefaultValue("#FF0000");
 
+        builder.Property(s => s.CreatedAt)
+            .IsRequired();
+
         builder.HasIndex(s => s.TenantId)
             .IsUnique();
     }

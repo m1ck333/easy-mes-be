@@ -3,4 +3,11 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Tenancy.Application.Commands.UpdateTenant;
 
-public record UpdateTenantCommand(Guid Id, string Name, bool IsActive) : IRequest<TenantDto>;
+public record UpdateTenantCommand(
+    Guid Id,
+    string Name,
+    bool IsActive,
+    int? DefaultWarningDays = null,
+    int? DefaultCriticalDays = null,
+    string? WarningColor = null,
+    string? CriticalColor = null) : IRequest<TenantDto>;

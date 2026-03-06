@@ -12,6 +12,7 @@ public class ChangeRequest : TenantEntity
     public string Description { get; private set; } = null!;
     public RequestStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; private set; }
     public Guid? HandledByUserId { get; private set; }
     public DateTime? HandledAt { get; private set; }
     public string? ResponseNote { get; private set; }
@@ -48,6 +49,7 @@ public class ChangeRequest : TenantEntity
         HandledByUserId = handledByUserId;
         HandledAt = DateTime.UtcNow;
         ResponseNote = responseNote?.Trim();
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Reject(Guid handledByUserId, string? responseNote)
@@ -59,5 +61,6 @@ public class ChangeRequest : TenantEntity
         HandledByUserId = handledByUserId;
         HandledAt = DateTime.UtcNow;
         ResponseNote = responseNote?.Trim();
+        UpdatedAt = DateTime.UtcNow;
     }
 }

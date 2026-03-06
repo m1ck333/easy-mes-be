@@ -1,4 +1,5 @@
 using AlGreenMES.Modules.Production.Api.Requests;
+using AlGreenMES.Modules.Production.Application.Commands.ActivateProductCategory;
 using AlGreenMES.Modules.Production.Application.Commands.AddCategoryDependency;
 using AlGreenMES.Modules.Production.Application.Commands.AddCategoryProcess;
 using AlGreenMES.Modules.Production.Application.Commands.CreateProductCategory;
@@ -33,6 +34,8 @@ public class ProductCategoriesController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
+        [FromQuery] DateTime? createdFrom = null,
+        [FromQuery] DateTime? createdTo = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetProductCategoriesQuery
@@ -41,7 +44,9 @@ public class ProductCategoriesController : ControllerBase
             IsActive = isActive,
             Page = page,
             PageSize = pageSize,
-            Search = search
+            Search = search,
+            CreatedFrom = createdFrom,
+            CreatedTo = createdTo
         }, cancellationToken);
         return Ok(result);
     }
@@ -58,7 +63,10 @@ public class ProductCategoriesController : ControllerBase
     public async Task<IActionResult> CreateProductCategory([FromBody] CreateProductCategoryRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new CreateProductCategoryCommand(request.TenantId, request.Name, request.Description, null),
+            new CreateProductCategoryCommand(
+                request.TenantId, request.Name, request.Description, null,
+                request.Processes?.Select(p => new ProcessInput(p.ProcessId, p.SequenceOrder, p.DefaultComplexity)).ToList(),
+                request.Dependencies?.Select(d => new DependencyInput(d.ProcessId, d.DependsOnProcessId)).ToList()),
             cancellationToken);
         return CreatedAtAction(nameof(GetProductCategoryById), new { id = result.Id }, result);
     }
@@ -68,7 +76,10 @@ public class ProductCategoriesController : ControllerBase
     public async Task<IActionResult> UpdateProductCategory(Guid id, [FromBody] UpdateProductCategoryRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new UpdateProductCategoryCommand(id, request.Name, request.Description),
+            new UpdateProductCategoryCommand(
+                id, request.Name, request.Description,
+                request.Processes?.Select(p => new ProcessInput(p.ProcessId, p.SequenceOrder, p.DefaultComplexity)).ToList(),
+                request.Dependencies?.Select(d => new DependencyInput(d.ProcessId, d.DependsOnProcessId)).ToList()),
             cancellationToken);
         return Ok(result);
     }
@@ -78,6 +89,14 @@ public class ProductCategoriesController : ControllerBase
     public async Task<IActionResult> DeactivateProductCategory(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeactivateProductCategoryCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/activate")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ActivateProductCategory(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new ActivateProductCategoryCommand(id), cancellationToken);
         return NoContent();
     }
 

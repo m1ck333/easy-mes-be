@@ -32,6 +32,8 @@ public class UsersController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
+        [FromQuery] DateTime? createdFrom = null,
+        [FromQuery] DateTime? createdTo = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetUsersQuery
@@ -41,7 +43,9 @@ public class UsersController : ControllerBase
             IsActive = isActive,
             Page = page,
             PageSize = pageSize,
-            Search = search
+            Search = search,
+            CreatedFrom = createdFrom,
+            CreatedTo = createdTo
         }, cancellationToken);
         return Ok(result);
     }

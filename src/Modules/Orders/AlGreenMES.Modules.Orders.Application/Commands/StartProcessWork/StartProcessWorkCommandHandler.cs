@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using AlGreenMES.Modules.Production.Domain.Repositories;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -13,17 +14,20 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.StartProcessWork;
 public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCommand, OrderItemProcessDto>
 {
     private readonly IOrderItemProcessRepository _processRepository;
+    private readonly IProcessRepository _productionProcessRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
     private readonly ILogger<StartProcessWorkCommandHandler> _logger;
 
     public StartProcessWorkCommandHandler(
         IOrderItemProcessRepository processRepository,
+        IProcessRepository productionProcessRepository,
         IOrdersUnitOfWork unitOfWork,
         IProductionEventService eventService,
         ILogger<StartProcessWorkCommandHandler> logger)
     {
         _processRepository = processRepository;
+        _productionProcessRepository = productionProcessRepository;
         _unitOfWork = unitOfWork;
         _eventService = eventService;
         _logger = logger;
@@ -52,9 +56,14 @@ public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCo
         process.Start();
         _logger.LogInformation("[StartProcess] Process started. Starting first sub-process...");
 
+        // Load production process to get SubProcess SequenceOrder for correct ordering
+        var productionProcess = await _productionProcessRepository.GetByIdWithSubProcessesAsync(process.ProcessId, cancellationToken);
+        var subProcessOrder = productionProcess?.SubProcesses
+            .ToDictionary(sp => sp.Id, sp => sp.SequenceOrder) ?? new();
+
         var firstSubProcess = process.SubProcesses
             .Where(sp => !sp.IsWithdrawn)
-            .OrderBy(sp => sp.SubProcessId)
+            .OrderBy(sp => subProcessOrder.GetValueOrDefault(sp.SubProcessId, 0))
             .FirstOrDefault();
 
         if (firstSubProcess != null)

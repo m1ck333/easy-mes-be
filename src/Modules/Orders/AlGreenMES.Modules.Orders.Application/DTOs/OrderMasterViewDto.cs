@@ -14,4 +14,5 @@ public record OrderMasterViewDto(
     int CompletedProcesses,
     int TotalProcesses,
     Dictionary<string, string> ProcessStatuses,
-    int AttachmentCount);
+    int AttachmentCount,
+    DateTime CreatedAt);

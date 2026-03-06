@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using AlGreenMES.Modules.Production.Domain.Repositories;
 using Mapster;
 using MediatR;
 
@@ -11,13 +12,16 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.StartSubProcess;
 public class StartSubProcessCommandHandler : IRequestHandler<StartSubProcessCommand, OrderItemSubProcessDto>
 {
     private readonly IOrderItemSubProcessRepository _subProcessRepository;
+    private readonly IProcessRepository _productionProcessRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
 
     public StartSubProcessCommandHandler(
         IOrderItemSubProcessRepository subProcessRepository,
+        IProcessRepository productionProcessRepository,
         IOrdersUnitOfWork unitOfWork)
     {
         _subProcessRepository = subProcessRepository;
+        _productionProcessRepository = productionProcessRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -35,10 +39,15 @@ public class StartSubProcessCommandHandler : IRequestHandler<StartSubProcessComm
         if (process.Status != ProcessStatus.InProgress)
             throw new DomainException("PROCESS_NOT_STARTED", "Parent process must be in progress.");
 
+        // Load production process to get SubProcess SequenceOrder for correct ordering
+        var productionProcess = await _productionProcessRepository.GetByIdWithSubProcessesAsync(process.ProcessId, cancellationToken);
+        var subProcessOrder = productionProcess?.SubProcesses
+            .ToDictionary(sp => sp.Id, sp => sp.SequenceOrder) ?? new();
+
         // Validate strict order: all previous sub-processes must be Completed
         var siblingSubProcesses = process.SubProcesses
             .Where(sp => !sp.IsWithdrawn)
-            .OrderBy(sp => sp.SubProcessId)
+            .OrderBy(sp => subProcessOrder.GetValueOrDefault(sp.SubProcessId, 0))
             .ToList();
 
         var currentIndex = siblingSubProcesses.FindIndex(sp => sp.Id == subProcess.Id);
