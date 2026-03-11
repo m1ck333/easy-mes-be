@@ -9,6 +9,8 @@ public record CreateProductCategoryCommand(
     string Name,
     string? Description,
     Guid? CreatedByUserId,
+    int? DefaultWarningDays,
+    int? DefaultCriticalDays,
     List<ProcessInput>? Processes,
     List<DependencyInput>? Dependencies) : IRequest<ProductCategoryDetailDto>;
 

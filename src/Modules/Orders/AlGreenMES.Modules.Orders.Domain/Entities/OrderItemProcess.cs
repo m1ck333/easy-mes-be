@@ -31,6 +31,9 @@ public class OrderItemProcess : TenantEntity
     public Guid? StoppedByUserId { get; private set; }
     public string? StoppedReason { get; private set; }
 
+    public DateTime? PausedAt { get; private set; }
+    public DateTime? ResumedAt { get; private set; }
+
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; private set; }
 
@@ -116,6 +119,31 @@ public class OrderItemProcess : TenantEntity
         WithdrawnByUserId = userId;
         WithdrawnReason = reason;
         Status = ProcessStatus.Withdrawn;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Pause()
+    {
+        if (PausedAt.HasValue)
+            throw new DomainException("ALREADY_PAUSED", "Process is already paused.");
+
+        // Accumulate current session duration in seconds
+        var sessionStart = ResumedAt ?? StartedAt ?? DateTime.UtcNow;
+        var sessionSeconds = (int)(DateTime.UtcNow - sessionStart).TotalSeconds;
+        TotalDurationMinutes += sessionSeconds;
+
+        PausedAt = DateTime.UtcNow;
+        ResumedAt = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ResumeTimer()
+    {
+        if (!PausedAt.HasValue)
+            throw new DomainException("NOT_PAUSED", "Process is not paused.");
+
+        PausedAt = null;
+        ResumedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 

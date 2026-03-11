@@ -74,6 +74,7 @@ public class GetTabletIncomingQueryHandler : IRequestHandler<GetTabletIncomingQu
 
                     var dto = process.Adapt<TabletIncomingDto>() with
                     {
+                        ProductCategoryName = category?.Name,
                         SpecialRequestNames = specialRequestNames,
                         CompletedProcessCount = completedCount,
                         TotalProcessCount = totalCount,

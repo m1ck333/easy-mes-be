@@ -100,15 +100,25 @@ public class OrderRepository : IOrderRepository
             query = query.Where(o => o.OrderType == orderType.Value);
 
         if (dateFrom.HasValue)
-            query = query.Where(o => o.DeliveryDate >= dateFrom.Value);
+        {
+            var from = DateTime.SpecifyKind(dateFrom.Value.Date, DateTimeKind.Utc);
+            query = query.Where(o => o.DeliveryDate >= from);
+        }
 
         if (dateTo.HasValue)
-            query = query.Where(o => o.DeliveryDate <= dateTo.Value);
+        {
+            var to = DateTime.SpecifyKind(dateTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(o => o.DeliveryDate < to);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(o => o.OrderNumber.Contains(search));
 
-        query = query.OrderBy(o => o.Priority).ThenBy(o => o.DeliveryDate);
+        query = query
+            .OrderBy(o => o.Status == OrderStatus.Completed ? 1 : 0)
+            .ThenBy(o => o.Status == OrderStatus.Cancelled ? 1 : 0)
+            .ThenBy(o => o.Priority)
+            .ThenBy(o => o.DeliveryDate);
 
         return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
@@ -128,15 +138,25 @@ public class OrderRepository : IOrderRepository
             query = query.Where(o => o.OrderType == orderType.Value);
 
         if (dateFrom.HasValue)
-            query = query.Where(o => o.DeliveryDate >= dateFrom.Value);
+        {
+            var from = DateTime.SpecifyKind(dateFrom.Value.Date, DateTimeKind.Utc);
+            query = query.Where(o => o.DeliveryDate >= from);
+        }
 
         if (dateTo.HasValue)
-            query = query.Where(o => o.DeliveryDate <= dateTo.Value);
+        {
+            var to = DateTime.SpecifyKind(dateTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(o => o.DeliveryDate < to);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(o => o.OrderNumber.Contains(search));
 
-        query = query.OrderBy(o => o.Priority).ThenBy(o => o.DeliveryDate);
+        query = query
+            .OrderBy(o => o.Status == OrderStatus.Completed ? 1 : 0)
+            .ThenBy(o => o.Status == OrderStatus.Cancelled ? 1 : 0)
+            .ThenBy(o => o.Priority)
+            .ThenBy(o => o.DeliveryDate);
 
         return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }

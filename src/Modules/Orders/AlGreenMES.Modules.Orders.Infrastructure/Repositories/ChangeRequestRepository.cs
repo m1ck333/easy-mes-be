@@ -50,7 +50,9 @@ public class ChangeRequestRepository : IChangeRequestRepository
 
     public async Task<PagedResult<ChangeRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, ChangeRequestType? requestType, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.ChangeRequests.Where(cr => cr.TenantId == tenantId);
+        var query = _dbContext.ChangeRequests
+            .Include(cr => cr.Order)
+            .Where(cr => cr.TenantId == tenantId);
 
         if (status.HasValue)
             query = query.Where(cr => cr.Status == status.Value);
@@ -62,9 +64,15 @@ public class ChangeRequestRepository : IChangeRequestRepository
             query = query.Where(cr => cr.Description.Contains(search));
 
         if (createdFrom.HasValue)
-            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        {
+            var from = DateTime.SpecifyKind(createdFrom.Value.Date, DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt >= from);
+        }
         if (createdTo.HasValue)
-            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
+        {
+            var to = DateTime.SpecifyKind(createdTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt < to);
+        }
 
         query = query.OrderByDescending(cr => cr.CreatedAt);
 
@@ -73,7 +81,9 @@ public class ChangeRequestRepository : IChangeRequestRepository
 
     public async Task<PagedResult<ChangeRequest>> GetPagedByUserAsync(Guid tenantId, Guid userId, RequestStatus? status, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.ChangeRequests.Where(cr => cr.TenantId == tenantId && cr.RequestedByUserId == userId);
+        var query = _dbContext.ChangeRequests
+            .Include(cr => cr.Order)
+            .Where(cr => cr.TenantId == tenantId && cr.RequestedByUserId == userId);
 
         if (status.HasValue)
             query = query.Where(cr => cr.Status == status.Value);

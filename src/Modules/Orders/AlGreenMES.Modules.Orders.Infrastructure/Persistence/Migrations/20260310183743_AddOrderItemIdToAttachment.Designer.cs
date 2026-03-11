@@ -3,17 +3,20 @@ using System;
 using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
+namespace AlGreenMES.Modules.Orders.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(OrdersDbContext))]
-    partial class OrdersDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260310183743_AddOrderItemIdToAttachment")]
+    partial class AddOrderItemIdToAttachment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -489,17 +492,9 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("order_item_id");
 
-                    b.Property<DateTime?>("PausedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("paused_at");
-
                     b.Property<Guid>("ProcessId")
                         .HasColumnType("uuid")
                         .HasColumnName("process_id");
-
-                    b.Property<DateTime?>("ResumedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("resumed_at");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("timestamp with time zone")

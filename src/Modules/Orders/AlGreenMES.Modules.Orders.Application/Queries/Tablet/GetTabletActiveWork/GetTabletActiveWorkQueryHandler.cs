@@ -10,13 +10,16 @@ namespace AlGreenMES.Modules.Orders.Application.Queries.Tablet.GetTabletActiveWo
 public class GetTabletActiveWorkQueryHandler : IRequestHandler<GetTabletActiveWorkQuery, IReadOnlyList<TabletActiveWorkDto>>
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IProductCategoryRepository _categoryRepository;
     private readonly ISpecialRequestTypeRepository _specialRequestTypeRepository;
 
     public GetTabletActiveWorkQueryHandler(
         IOrderRepository orderRepository,
+        IProductCategoryRepository categoryRepository,
         ISpecialRequestTypeRepository specialRequestTypeRepository)
     {
         _orderRepository = orderRepository;
+        _categoryRepository = categoryRepository;
         _specialRequestTypeRepository = specialRequestTypeRepository;
     }
 
@@ -33,6 +36,8 @@ public class GetTabletActiveWorkQueryHandler : IRequestHandler<GetTabletActiveWo
         {
             foreach (var item in order.Items)
             {
+                var category = await _categoryRepository.GetByIdWithDetailsAsync(item.ProductCategoryId, cancellationToken);
+
                 var specialRequestNames = item.SpecialRequests
                     .Select(sr => srLookup.GetValueOrDefault(sr.SpecialRequestTypeId, ""))
                     .Where(name => !string.IsNullOrEmpty(name))
@@ -73,15 +78,18 @@ public class GetTabletActiveWorkQueryHandler : IRequestHandler<GetTabletActiveWo
                     }
                     else
                     {
-                        // No sub-processes: timer runs from process StartedAt
-                        isTimerRunning = true;
-                        currentLogStartedAt = process.StartedAt;
-                        totalDuration = 0;
+                        // No sub-processes: TotalDurationMinutes stores accumulated SECONDS
+                        isTimerRunning = !process.PausedAt.HasValue;
+                        totalDuration = process.TotalDurationMinutes;
+                        currentLogStartedAt = isTimerRunning
+                            ? (process.ResumedAt ?? process.StartedAt)
+                            : null;
                         subDtos = new List<TabletSubProcessDto>();
                     }
 
                     var dto = process.Adapt<TabletActiveWorkDto>() with
                     {
+                        ProductCategoryName = category?.Name,
                         SpecialRequestNames = specialRequestNames,
                         CompletedProcessCount = completedCount,
                         TotalProcessCount = totalCount,

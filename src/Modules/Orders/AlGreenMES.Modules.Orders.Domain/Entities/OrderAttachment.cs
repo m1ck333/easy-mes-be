@@ -6,6 +6,7 @@ namespace AlGreenMES.Modules.Orders.Domain.Entities;
 public class OrderAttachment : TenantEntity
 {
     public Guid OrderId { get; private set; }
+    public Guid? OrderItemId { get; private set; }
     public string OriginalFileName { get; private set; } = null!;
     public string StoredFileName { get; private set; } = null!;
     public string ContentType { get; private set; } = null!;
@@ -15,6 +16,7 @@ public class OrderAttachment : TenantEntity
     public Guid UploadedByUserId { get; private set; }
 
     public Order Order { get; private set; } = null!;
+    public OrderItem? OrderItem { get; private set; }
 
     private OrderAttachment() { }
 
@@ -26,7 +28,8 @@ public class OrderAttachment : TenantEntity
         string contentType,
         long fileSizeBytes,
         string storagePath,
-        Guid uploadedByUserId)
+        Guid uploadedByUserId,
+        Guid? orderItemId = null)
     {
         if (string.IsNullOrWhiteSpace(originalFileName))
             throw new DomainException("INVALID_FILE_NAME", "File name is required.");
@@ -37,6 +40,7 @@ public class OrderAttachment : TenantEntity
         {
             TenantId = tenantId,
             OrderId = orderId,
+            OrderItemId = orderItemId,
             OriginalFileName = originalFileName.Trim(),
             StoredFileName = storedFileName,
             ContentType = contentType,

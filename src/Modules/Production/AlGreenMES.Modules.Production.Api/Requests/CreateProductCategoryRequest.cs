@@ -6,6 +6,8 @@ public record CreateProductCategoryRequest(
     Guid TenantId,
     string Name,
     string? Description,
+    int? DefaultWarningDays,
+    int? DefaultCriticalDays,
     List<CategoryProcessInput>? Processes,
     List<CategoryDependencyInput>? Dependencies);
 

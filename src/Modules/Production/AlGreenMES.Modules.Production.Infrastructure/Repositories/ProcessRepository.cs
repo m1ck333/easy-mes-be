@@ -65,12 +65,26 @@ public class ProcessRepository : IProcessRepository
         }
 
         if (createdFrom.HasValue)
-            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        {
+            var from = DateTime.SpecifyKind(createdFrom.Value.Date, DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt >= from);
+        }
         if (createdTo.HasValue)
-            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
+        {
+            var to = DateTime.SpecifyKind(createdTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt < to);
+        }
 
         query = query.OrderBy(p => p.SequenceOrder);
 
         return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Process>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+        return await _dbContext.Processes
+            .Where(p => idList.Contains(p.Id))
+            .ToListAsync(cancellationToken);
     }
 }

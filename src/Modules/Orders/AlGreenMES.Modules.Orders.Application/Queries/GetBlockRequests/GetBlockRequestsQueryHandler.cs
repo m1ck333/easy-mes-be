@@ -22,6 +22,11 @@ public class GetBlockRequestsQueryHandler : IRequestHandler<GetBlockRequestsQuer
             request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return result.MapItems(b => b.Adapt<BlockRequestDto>());
+        return result.MapItems(b =>
+        {
+            var order = b.OrderItemProcess?.OrderItem?.Order;
+            var dto = b.Adapt<BlockRequestDto>();
+            return dto with { OrderId = order?.Id, OrderNumber = order?.OrderNumber };
+        });
     }
 }

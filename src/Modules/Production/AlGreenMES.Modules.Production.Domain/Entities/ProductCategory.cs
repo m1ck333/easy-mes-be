@@ -9,6 +9,8 @@ public class ProductCategory : AuditableEntity
     public string Name { get; private set; } = null!;
     public string? Description { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public int? DefaultWarningDays { get; private set; }
+    public int? DefaultCriticalDays { get; private set; }
 
     private readonly List<ProductCategoryProcess> _processes = new();
     public IReadOnlyCollection<ProductCategoryProcess> Processes => _processes.AsReadOnly();
@@ -20,7 +22,7 @@ public class ProductCategory : AuditableEntity
     {
     }
 
-    public static ProductCategory Create(Guid tenantId, string name, string? description = null, Guid? createdByUserId = null)
+    public static ProductCategory Create(Guid tenantId, string name, string? description = null, Guid? createdByUserId = null, int? defaultWarningDays = null, int? defaultCriticalDays = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("INVALID_NAME", "Category name is required.");
@@ -29,20 +31,24 @@ public class ProductCategory : AuditableEntity
         {
             TenantId = tenantId,
             Name = name.Trim(),
-            Description = description?.Trim()
+            Description = description?.Trim(),
+            DefaultWarningDays = defaultWarningDays,
+            DefaultCriticalDays = defaultCriticalDays
         };
         if (createdByUserId.HasValue)
             category.SetCreated(createdByUserId.Value);
         return category;
     }
 
-    public void Update(string name, string? description)
+    public void Update(string name, string? description, int? defaultWarningDays = null, int? defaultCriticalDays = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("INVALID_NAME", "Category name is required.");
 
         Name = name.Trim();
         Description = description?.Trim();
+        DefaultWarningDays = defaultWarningDays;
+        DefaultCriticalDays = defaultCriticalDays;
     }
 
     public void AddProcess(Guid processId, int sequenceOrder, ComplexityType? defaultComplexity = null)

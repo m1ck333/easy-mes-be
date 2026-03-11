@@ -37,7 +37,16 @@ public class OrderAttachmentConfiguration : IEntityTypeConfiguration<OrderAttach
         builder.Property(a => a.UploadedByUserId)
             .IsRequired();
 
+        builder.Property(a => a.OrderItemId)
+            .IsRequired(false);
+
         builder.HasIndex(a => a.OrderId);
+        builder.HasIndex(a => a.OrderItemId);
         builder.HasIndex(a => new { a.TenantId, a.OrderId });
+
+        builder.HasOne(a => a.OrderItem)
+            .WithMany()
+            .HasForeignKey(a => a.OrderItemId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

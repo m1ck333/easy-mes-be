@@ -64,10 +64,22 @@ public class UploadOrderAttachmentCommandHandler : IRequestHandler<UploadOrderAt
         if (request.FileSizeBytes > _settings.MaxFileSizeBytes)
             throw new DomainException("FILE_TOO_LARGE", $"File size exceeds maximum of {_settings.MaxFileSizeBytes / (1024 * 1024)}MB.");
 
-        // Validate count
-        var currentCount = await _attachmentRepository.GetCountByOrderIdAsync(request.OrderId, cancellationToken);
+        // Validate item belongs to order (if item-level)
+        if (request.OrderItemId.HasValue)
+        {
+            var itemBelongs = await _attachmentRepository.OrderItemBelongsToOrderAsync(request.OrderItemId.Value, request.OrderId, cancellationToken);
+            if (!itemBelongs)
+                throw new DomainException("INVALID_ORDER_ITEM", "The specified item does not belong to this order.");
+        }
+
+        // Validate count (per scope: order-level or item-level)
+        int currentCount;
+        if (request.OrderItemId.HasValue)
+            currentCount = await _attachmentRepository.GetCountByOrderItemIdAsync(request.OrderItemId.Value, cancellationToken);
+        else
+            currentCount = await _attachmentRepository.GetCountByOrderIdAsync(request.OrderId, cancellationToken);
         if (currentCount >= _settings.MaxFilesPerOrder)
-            throw new DomainException("TOO_MANY_ATTACHMENTS", $"Maximum of {_settings.MaxFilesPerOrder} attachments per order.");
+            throw new DomainException("TOO_MANY_ATTACHMENTS", $"Maximum of {_settings.MaxFilesPerOrder} attachments.");
 
         // Save file
         var storedFileName = $"{Guid.NewGuid()}{extension}";
@@ -84,7 +96,8 @@ public class UploadOrderAttachmentCommandHandler : IRequestHandler<UploadOrderAt
             request.ContentType,
             request.FileSizeBytes,
             relativePath,
-            request.UserId);
+            request.UserId,
+            request.OrderItemId);
 
         await _attachmentRepository.AddAsync(attachment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

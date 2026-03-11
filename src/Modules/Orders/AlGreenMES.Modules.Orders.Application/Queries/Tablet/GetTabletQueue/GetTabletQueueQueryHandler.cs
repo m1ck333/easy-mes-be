@@ -70,6 +70,7 @@ public class GetTabletQueueQueryHandler : IRequestHandler<GetTabletQueueQuery, I
 
                     var dto = process.Adapt<TabletQueueItemDto>() with
                     {
+                        ProductCategoryName = category?.Name,
                         SpecialRequestNames = specialRequestNames,
                         CompletedProcessCount = completedCount,
                         TotalProcessCount = totalCount

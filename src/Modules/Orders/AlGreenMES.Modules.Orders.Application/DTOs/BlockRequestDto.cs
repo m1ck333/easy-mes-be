@@ -14,4 +14,6 @@ public record BlockRequestDto(
     Guid? HandledByUserId,
     DateTime? HandledAt,
     string? BlockReason,
-    string? RejectionNote);
+    string? RejectionNote,
+    Guid? OrderId,
+    string? OrderNumber);

@@ -31,18 +31,27 @@ public class StopProcessWorkCommandHandler : IRequestHandler<StopProcessWorkComm
         if (process.Status != ProcessStatus.InProgress)
             throw new DomainException("INVALID_STATUS", "Process must be in progress to stop work.");
 
-        var activeSubProcess = process.SubProcesses
-            .FirstOrDefault(sp => sp.Status == SubProcessStatus.InProgress);
+        var hasSubProcesses = process.SubProcesses.Any(sp => !sp.IsWithdrawn);
 
-        if (activeSubProcess != null)
+        if (hasSubProcesses)
         {
-            var openLog = activeSubProcess.GetOpenLog();
-            if (openLog != null)
+            var activeSubProcess = process.SubProcesses
+                .FirstOrDefault(sp => sp.Status == SubProcessStatus.InProgress);
+
+            if (activeSubProcess != null)
             {
-                openLog.End();
-                if (openLog.DurationMinutes.HasValue)
-                    activeSubProcess.AddDuration(openLog.DurationMinutes.Value);
+                var openLog = activeSubProcess.GetOpenLog();
+                if (openLog != null)
+                {
+                    openLog.End();
+                    if (openLog.DurationMinutes.HasValue)
+                        activeSubProcess.AddDuration(openLog.DurationMinutes.Value);
+                }
             }
+        }
+        else
+        {
+            process.Pause();
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

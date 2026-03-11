@@ -65,6 +65,7 @@ public class ProductCategoriesController : ControllerBase
         var result = await _mediator.Send(
             new CreateProductCategoryCommand(
                 request.TenantId, request.Name, request.Description, null,
+                request.DefaultWarningDays, request.DefaultCriticalDays,
                 request.Processes?.Select(p => new ProcessInput(p.ProcessId, p.SequenceOrder, p.DefaultComplexity)).ToList(),
                 request.Dependencies?.Select(d => new DependencyInput(d.ProcessId, d.DependsOnProcessId)).ToList()),
             cancellationToken);
@@ -78,6 +79,7 @@ public class ProductCategoriesController : ControllerBase
         var result = await _mediator.Send(
             new UpdateProductCategoryCommand(
                 id, request.Name, request.Description,
+                request.DefaultWarningDays, request.DefaultCriticalDays,
                 request.Processes?.Select(p => new ProcessInput(p.ProcessId, p.SequenceOrder, p.DefaultComplexity)).ToList(),
                 request.Dependencies?.Select(d => new DependencyInput(d.ProcessId, d.DependsOnProcessId)).ToList()),
             cancellationToken);

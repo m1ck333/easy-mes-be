@@ -42,7 +42,11 @@ public class BlockRequestRepository : IBlockRequestRepository
 
     public async Task<PagedResult<BlockRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.BlockRequests.Where(br => br.TenantId == tenantId);
+        var query = _dbContext.BlockRequests
+            .Include(br => br.OrderItemProcess)
+                .ThenInclude(p => p!.OrderItem)
+                    .ThenInclude(i => i.Order)
+            .Where(br => br.TenantId == tenantId);
 
         if (status.HasValue)
             query = query.Where(br => br.Status == status.Value);
@@ -51,9 +55,15 @@ public class BlockRequestRepository : IBlockRequestRepository
             query = query.Where(br => br.RequestNote != null && br.RequestNote.Contains(search));
 
         if (createdFrom.HasValue)
-            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        {
+            var from = DateTime.SpecifyKind(createdFrom.Value.Date, DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt >= from);
+        }
         if (createdTo.HasValue)
-            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
+        {
+            var to = DateTime.SpecifyKind(createdTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt < to);
+        }
 
         query = query.OrderByDescending(br => br.CreatedAt);
 

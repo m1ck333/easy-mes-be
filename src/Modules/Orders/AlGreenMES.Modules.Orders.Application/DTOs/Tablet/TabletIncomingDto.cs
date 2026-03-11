@@ -10,6 +10,7 @@ public record TabletIncomingDto(
     int Priority,
     DateTime DeliveryDate,
     string ProductName,
+    string? ProductCategoryName,
     int Quantity,
     ComplexityType? Complexity,
     ProcessStatus Status,

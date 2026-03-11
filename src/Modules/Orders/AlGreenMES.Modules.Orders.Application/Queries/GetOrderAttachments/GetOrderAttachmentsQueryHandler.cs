@@ -16,7 +16,9 @@ public class GetOrderAttachmentsQueryHandler : IRequestHandler<GetOrderAttachmen
 
     public async Task<IReadOnlyList<OrderAttachmentDto>> Handle(GetOrderAttachmentsQuery request, CancellationToken cancellationToken)
     {
-        var attachments = await _attachmentRepository.GetByOrderIdAsync(request.OrderId, cancellationToken);
+        var attachments = request.OrderItemId.HasValue
+            ? await _attachmentRepository.GetByOrderItemIdAsync(request.OrderItemId.Value, cancellationToken)
+            : await _attachmentRepository.GetByOrderIdAsync(request.OrderId, cancellationToken);
         return attachments.Adapt<IReadOnlyList<OrderAttachmentDto>>();
     }
 }

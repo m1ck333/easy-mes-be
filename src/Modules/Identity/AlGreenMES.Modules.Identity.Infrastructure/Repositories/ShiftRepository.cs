@@ -45,9 +45,15 @@ public class ShiftRepository : IShiftRepository
             query = query.Where(s => s.Name.Contains(search));
 
         if (createdFrom.HasValue)
-            query = query.Where(x => x.CreatedAt >= createdFrom.Value);
+        {
+            var from = DateTime.SpecifyKind(createdFrom.Value.Date, DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt >= from);
+        }
         if (createdTo.HasValue)
-            query = query.Where(x => x.CreatedAt < createdTo.Value.AddDays(1));
+        {
+            var to = DateTime.SpecifyKind(createdTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt < to);
+        }
 
         query = query.OrderBy(s => s.Name);
 

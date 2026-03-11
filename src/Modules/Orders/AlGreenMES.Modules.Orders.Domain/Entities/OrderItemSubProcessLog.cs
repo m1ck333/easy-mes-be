@@ -34,6 +34,6 @@ public class OrderItemSubProcessLog : TenantEntity
         if (EndTime.HasValue)
             throw new DomainException("ALREADY_ENDED", "Log already ended.");
         EndTime = DateTime.UtcNow;
-        DurationMinutes = (int)(EndTime.Value - StartTime).TotalMinutes;
+        DurationMinutes = (int)(EndTime.Value - StartTime).TotalSeconds;
     }
 }

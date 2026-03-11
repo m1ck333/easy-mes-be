@@ -25,7 +25,7 @@ public class CreateProductCategoryCommandHandler : IRequestHandler<CreateProduct
         if (nameExists)
             throw new DomainException("CATEGORY_NAME_EXISTS", $"A product category with name '{request.Name}' already exists.");
 
-        var category = ProductCategory.Create(request.TenantId, request.Name, request.Description, request.CreatedByUserId);
+        var category = ProductCategory.Create(request.TenantId, request.Name, request.Description, request.CreatedByUserId, request.DefaultWarningDays, request.DefaultCriticalDays);
 
         if (request.Processes is { Count: > 0 })
         {

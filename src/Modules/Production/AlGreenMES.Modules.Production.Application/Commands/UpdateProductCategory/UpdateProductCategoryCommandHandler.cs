@@ -23,7 +23,7 @@ public class UpdateProductCategoryCommandHandler : IRequestHandler<UpdateProduct
         var category = await _categoryRepository.GetByIdWithDetailsAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("ProductCategory", request.Id);
 
-        category.Update(request.Name, request.Description);
+        category.Update(request.Name, request.Description, request.DefaultWarningDays, request.DefaultCriticalDays);
 
         if (request.Processes is not null)
         {

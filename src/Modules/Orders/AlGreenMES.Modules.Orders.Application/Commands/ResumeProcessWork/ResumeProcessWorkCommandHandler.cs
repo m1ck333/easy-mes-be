@@ -31,17 +31,20 @@ public class ResumeProcessWorkCommandHandler : IRequestHandler<ResumeProcessWork
         if (process.Status != ProcessStatus.InProgress)
             throw new DomainException("INVALID_STATUS", "Process must be in progress to resume.");
 
+        var hasSubProcesses = process.SubProcesses.Any(sp => !sp.IsWithdrawn);
+
+        if (!hasSubProcesses)
+        {
+            process.ResumeTimer();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return Unit.Value;
+        }
+
         var activeSubProcess = process.SubProcesses
             .FirstOrDefault(sp => sp.Status == SubProcessStatus.InProgress);
 
         if (activeSubProcess == null)
-        {
-            // No sub-processes: nothing to resume (timer runs from process StartedAt)
-            if (!process.SubProcesses.Any(sp => !sp.IsWithdrawn))
-                return Unit.Value;
-
             throw new DomainException("NO_ACTIVE_SUBPROCESS", "No in-progress sub-process found to resume.");
-        }
 
         var existingOpenLog = activeSubProcess.GetOpenLog();
         if (existingOpenLog != null)

@@ -102,6 +102,13 @@ public class Order : AuditableEntity
         Status = OrderStatus.Cancelled;
     }
 
+    public void Reopen()
+    {
+        if (Status != OrderStatus.Cancelled)
+            throw new DomainException("INVALID_STATUS", "Only cancelled orders can be reopened.");
+        Status = OrderStatus.Draft;
+    }
+
     public void ChangePriority(int newPriority)
     {
         if (newPriority <= 0)

@@ -10,4 +10,5 @@ public record UploadOrderAttachmentCommand(
     string FileName,
     string ContentType,
     long FileSizeBytes,
-    Stream FileStream) : IRequest<OrderAttachmentDto>;
+    Stream FileStream,
+    Guid? OrderItemId = null) : IRequest<OrderAttachmentDto>;

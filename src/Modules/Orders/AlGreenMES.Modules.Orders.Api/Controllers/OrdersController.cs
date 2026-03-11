@@ -12,6 +12,7 @@ using AlGreenMES.Modules.Orders.Application.Commands.OverrideComplexity;
 using AlGreenMES.Modules.Orders.Application.Commands.PauseOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.RemoveOrderItem;
 using AlGreenMES.Modules.Orders.Application.Commands.RemoveSpecialRequest;
+using AlGreenMES.Modules.Orders.Application.Commands.ReopenOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.ResumeOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.UpdateOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.UploadOrderAttachment;
@@ -171,6 +172,14 @@ public class OrdersController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/reopen")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> ReopenOrder(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new ReopenOrderCommand(id), cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("{orderId:guid}/items")]
     [Authorize(Roles = "Admin,Manager,SalesManager")]
     public async Task<IActionResult> AddOrderItem(Guid orderId, [FromBody] AddOrderItemRequest request, CancellationToken cancellationToken)
@@ -234,7 +243,7 @@ public class OrdersController : ControllerBase
     [HttpPost("{orderId:guid}/attachments")]
     [Authorize(Roles = "Admin,Manager,SalesManager")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> UploadAttachment(Guid orderId, IFormFile file, [FromQuery] Guid tenantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadAttachment(Guid orderId, IFormFile file, [FromQuery] Guid tenantId, [FromQuery] Guid? orderItemId, CancellationToken cancellationToken)
     {
         var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
             ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -242,15 +251,16 @@ public class OrdersController : ControllerBase
 
         var result = await _mediator.Send(new UploadOrderAttachmentCommand(
             orderId, tenantId, userId,
-            file.FileName, file.ContentType, file.Length, file.OpenReadStream()),
+            file.FileName, file.ContentType, file.Length, file.OpenReadStream(),
+            orderItemId),
             cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{orderId:guid}/attachments")]
-    public async Task<IActionResult> GetAttachments(Guid orderId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAttachments(Guid orderId, [FromQuery] Guid? orderItemId, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetOrderAttachmentsQuery(orderId), cancellationToken);
+        var result = await _mediator.Send(new GetOrderAttachmentsQuery(orderId, orderItemId), cancellationToken);
         return Ok(result);
     }
 

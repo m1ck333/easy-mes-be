@@ -20,13 +20,27 @@ public class OrderAttachmentRepository : IOrderAttachmentRepository
             .OrderBy(a => a.UploadedAt)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<OrderAttachment>> GetByOrderItemIdAsync(Guid orderItemId, CancellationToken cancellationToken = default)
+        => await _dbContext.OrderAttachments
+            .Where(a => a.OrderItemId == orderItemId)
+            .OrderBy(a => a.UploadedAt)
+            .ToListAsync(cancellationToken);
+
     public async Task<OrderAttachment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _dbContext.OrderAttachments
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
     public async Task<int> GetCountByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default)
         => await _dbContext.OrderAttachments
-            .CountAsync(a => a.OrderId == orderId, cancellationToken);
+            .CountAsync(a => a.OrderId == orderId && a.OrderItemId == null, cancellationToken);
+
+    public async Task<int> GetCountByOrderItemIdAsync(Guid orderItemId, CancellationToken cancellationToken = default)
+        => await _dbContext.OrderAttachments
+            .CountAsync(a => a.OrderItemId == orderItemId, cancellationToken);
+
+    public async Task<bool> OrderItemBelongsToOrderAsync(Guid orderItemId, Guid orderId, CancellationToken cancellationToken = default)
+        => await _dbContext.OrderItems
+            .AnyAsync(i => i.Id == orderItemId && i.OrderId == orderId, cancellationToken);
 
     public async Task AddAsync(OrderAttachment attachment, CancellationToken cancellationToken = default)
         => await _dbContext.OrderAttachments.AddAsync(attachment, cancellationToken);

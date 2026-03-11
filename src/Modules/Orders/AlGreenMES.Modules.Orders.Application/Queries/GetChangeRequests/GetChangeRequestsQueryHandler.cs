@@ -22,6 +22,10 @@ public class GetChangeRequestsQueryHandler : IRequestHandler<GetChangeRequestsQu
             request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return result.MapItems(c => c.Adapt<ChangeRequestDto>());
+        return result.MapItems(c =>
+        {
+            var dto = c.Adapt<ChangeRequestDto>();
+            return dto with { OrderNumber = c.Order?.OrderNumber };
+        });
     }
 }

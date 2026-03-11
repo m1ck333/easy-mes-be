@@ -8,5 +8,7 @@ public record UpdateProductCategoryCommand(
     Guid Id,
     string Name,
     string? Description,
+    int? DefaultWarningDays,
+    int? DefaultCriticalDays,
     List<ProcessInput>? Processes,
     List<DependencyInput>? Dependencies) : IRequest<ProductCategoryDetailDto>;

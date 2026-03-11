@@ -6,6 +6,8 @@ public record ProductCategoryDto(
     string Name,
     string? Description,
     bool IsActive,
+    int? DefaultWarningDays,
+    int? DefaultCriticalDays,
     DateTime CreatedAt,
     DateTime? UpdatedAt);
 
@@ -15,6 +17,8 @@ public record ProductCategoryDetailDto(
     string Name,
     string? Description,
     bool IsActive,
+    int? DefaultWarningDays,
+    int? DefaultCriticalDays,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     List<ProductCategoryProcessDto> Processes,
