@@ -8,4 +8,5 @@ public record OrderItemDto(
     int Quantity,
     string? Notes,
     List<OrderItemProcessDto> Processes,
-    List<OrderItemSpecialRequestDto> SpecialRequests);
+    List<OrderItemSpecialRequestDto> SpecialRequests,
+    List<OrderAttachmentDto> Attachments);

@@ -9,4 +9,5 @@ public interface IOrderItemProcessRepository
     Task<OrderItemProcess?> GetByIdWithOrderDetailsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<OrderItemProcess?> GetByIdWithFullDetailsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<OrderItemProcess>> GetByOrderItemIdAsync(Guid orderItemId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<OrderItemProcess>> GetInProgressByProcessIdAsync(Guid processId, Guid tenantId, CancellationToken cancellationToken = default);
 }

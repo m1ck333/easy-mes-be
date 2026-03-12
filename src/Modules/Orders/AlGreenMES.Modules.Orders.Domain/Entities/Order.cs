@@ -132,7 +132,10 @@ public class Order : AuditableEntity
     public void MarkCompleted()
     {
         if (_items.All(i => i.IsCompleted()))
+        {
             Status = OrderStatus.Completed;
+            Priority = 0;
+        }
     }
 
     public void Update(string? notes, int? customWarningDays, int? customCriticalDays)

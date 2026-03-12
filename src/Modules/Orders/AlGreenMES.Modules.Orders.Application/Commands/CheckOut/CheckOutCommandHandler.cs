@@ -14,7 +14,10 @@ public class CheckOutCommandHandler : IRequestHandler<CheckOutCommand, WorkSessi
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
 
-    public CheckOutCommandHandler(IWorkSessionRepository workSessionRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
+    public CheckOutCommandHandler(
+        IWorkSessionRepository workSessionRepository,
+        IOrdersUnitOfWork unitOfWork,
+        IProductionEventService eventService)
     {
         _workSessionRepository = workSessionRepository;
         _unitOfWork = unitOfWork;

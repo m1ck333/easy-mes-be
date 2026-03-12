@@ -12,6 +12,9 @@ public class OrderItemSpecialRequestConfiguration : IEntityTypeConfiguration<Ord
 
         builder.HasKey(sr => sr.Id);
 
+        builder.Property(sr => sr.Id)
+            .ValueGeneratedNever();
+
         builder.Property(sr => sr.CreatedAt)
             .IsRequired();
 

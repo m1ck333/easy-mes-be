@@ -9,6 +9,7 @@ public class CreateOrderAddItemInput
     public string ProductName { get; set; } = string.Empty;
     public int Quantity { get; set; }
     public string? Notes { get; set; }
+    public List<IFormFile>? Attachments { get; set; }
 }
 
 public class CreateOrderRequest

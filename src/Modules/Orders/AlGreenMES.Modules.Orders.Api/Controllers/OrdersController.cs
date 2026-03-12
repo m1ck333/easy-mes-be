@@ -118,7 +118,8 @@ public class OrdersController : ControllerBase
         var result = await _mediator.Send(
             new CreateOrderCommand(
                 request.TenantId, request.OrderNumber, request.DeliveryDate, request.Priority, request.OrderType, userId, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
-                request.Items?.Select(i => new Application.Commands.CreateOrder.CreateOrderItemInput(i.ProductCategoryId, i.ProductName, i.Quantity, i.Notes)).ToList(),
+                request.Items?.Select(i => new Application.Commands.CreateOrder.CreateOrderItemInput(i.ProductCategoryId, i.ProductName, i.Quantity, i.Notes,
+                    i.Attachments?.Select(f => new Application.Commands.CreateOrder.CreateOrderAttachmentInput(f.FileName, f.ContentType, f.Length, f.OpenReadStream())).ToList())).ToList(),
                 request.Attachments?.Select(f => new Application.Commands.CreateOrder.CreateOrderAttachmentInput(f.FileName, f.ContentType, f.Length, f.OpenReadStream())).ToList()),
             cancellationToken);
         return CreatedAtAction(nameof(GetOrderById), new { id = result.Id }, result);

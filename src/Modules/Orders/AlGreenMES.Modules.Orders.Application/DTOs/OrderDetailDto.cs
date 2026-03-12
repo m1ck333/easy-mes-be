@@ -13,4 +13,5 @@ public record OrderDetailDto(
     string? Notes,
     int? CustomWarningDays,
     int? CustomCriticalDays,
-    List<OrderItemDto> Items);
+    List<OrderItemDto> Items,
+    List<OrderAttachmentDto> Attachments);

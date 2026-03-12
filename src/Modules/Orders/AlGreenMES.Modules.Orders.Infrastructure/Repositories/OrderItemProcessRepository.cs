@@ -53,4 +53,15 @@ public class OrderItemProcessRepository : IOrderItemProcessRepository
             .Where(p => p.OrderItemId == orderItemId)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<OrderItemProcess>> GetInProgressByProcessIdAsync(Guid processId, Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.OrderItemProcesses
+            .Include(p => p.SubProcesses)
+                .ThenInclude(sp => sp.Logs)
+            .Where(p => p.TenantId == tenantId
+                && p.ProcessId == processId
+                && p.Status == Domain.Enums.ProcessStatus.InProgress)
+            .ToListAsync(cancellationToken);
+    }
 }

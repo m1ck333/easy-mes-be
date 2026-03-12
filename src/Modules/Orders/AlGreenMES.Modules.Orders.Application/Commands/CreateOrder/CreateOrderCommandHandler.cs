@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CreateOrder;
 
-public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderDto>
+public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderDetailDto>
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IProductCategoryRepository _categoryRepository;
@@ -38,7 +38,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
         _settings = settings.Value;
     }
 
-    public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
+    public async Task<OrderDetailDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
         var exists = await _orderRepository.ExistsByOrderNumberAsync(request.OrderNumber, request.TenantId, cancellationToken);
         if (exists)
@@ -81,58 +81,69 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
                 }
 
                 _orderRepository.AddItem(item);
+
+                // Process per-item attachments
+                if (itemInput.Attachments is { Count: > 0 })
+                {
+                    foreach (var file in itemInput.Attachments)
+                        await SaveAttachment(file, request.TenantId, order.Id, request.CreatedByUserId, item.Id, cancellationToken);
+                }
             }
         }
 
         await _orderRepository.AddAsync(order, cancellationToken);
 
-        // Process attachments if provided
+        // Process order-level attachments
         if (request.Attachments is { Count: > 0 })
         {
             foreach (var file in request.Attachments)
-            {
-                var contentType = (file.ContentType ?? "").ToLowerInvariant();
-                if (!_settings.AllowedContentTypes.Contains(contentType))
-                    throw new DomainException("INVALID_CONTENT_TYPE", $"Content type '{file.ContentType}' is not allowed.");
-
-                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (string.IsNullOrEmpty(extension))
-                {
-                    extension = contentType switch
-                    {
-                        "image/jpeg" => ".jpg",
-                        "image/png" => ".png",
-                        "application/pdf" => ".pdf",
-                        _ => ""
-                    };
-                }
-                if (!_settings.AllowedExtensions.Contains(extension))
-                    throw new DomainException("INVALID_FILE_TYPE", $"File type '{extension}' is not allowed. Allowed: {string.Join(", ", _settings.AllowedExtensions)}");
-
-                if (file.FileSizeBytes > _settings.MaxFileSizeBytes)
-                    throw new DomainException("FILE_TOO_LARGE", $"File size exceeds maximum of {_settings.MaxFileSizeBytes / (1024 * 1024)}MB.");
-
-                var storedFileName = $"{Guid.NewGuid()}{extension}";
-                var relativePath = Path.Combine("orders", request.TenantId.ToString(), order.Id.ToString(), storedFileName);
-
-                await _fileStorageService.SaveFileAsync(relativePath, file.FileStream, cancellationToken);
-
-                var attachment = OrderAttachment.Create(
-                    request.TenantId,
-                    order.Id,
-                    file.FileName,
-                    storedFileName,
-                    file.ContentType,
-                    file.FileSizeBytes,
-                    relativePath,
-                    request.CreatedByUserId);
-
-                await _attachmentRepository.AddAsync(attachment, cancellationToken);
-            }
+                await SaveAttachment(file, request.TenantId, order.Id, request.CreatedByUserId, null, cancellationToken);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return order.Adapt<OrderDto>();
+        return order.Adapt<OrderDetailDto>();
+    }
+
+    private async Task SaveAttachment(CreateOrderAttachmentInput file, Guid tenantId, Guid orderId, Guid userId, Guid? orderItemId, CancellationToken cancellationToken)
+    {
+        var contentType = (file.ContentType ?? "").ToLowerInvariant();
+        if (!_settings.AllowedContentTypes.Contains(contentType))
+            throw new DomainException("INVALID_CONTENT_TYPE", $"Content type '{file.ContentType}' is not allowed.");
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (string.IsNullOrEmpty(extension))
+        {
+            extension = contentType switch
+            {
+                "image/jpeg" => ".jpg",
+                "image/png" => ".png",
+                "application/pdf" => ".pdf",
+                _ => ""
+            };
+        }
+        if (!_settings.AllowedExtensions.Contains(extension))
+            throw new DomainException("INVALID_FILE_TYPE", $"File type '{extension}' is not allowed. Allowed: {string.Join(", ", _settings.AllowedExtensions)}");
+
+        if (file.FileSizeBytes > _settings.MaxFileSizeBytes)
+            throw new DomainException("FILE_TOO_LARGE", $"File size exceeds maximum of {_settings.MaxFileSizeBytes / (1024 * 1024)}MB.");
+
+        var storedFileName = $"{Guid.NewGuid()}{extension}";
+        var relativePath = Path.Combine("orders", tenantId.ToString(), orderId.ToString(), storedFileName);
+
+        await _fileStorageService.SaveFileAsync(relativePath, file.FileStream, cancellationToken);
+
+        var attachment = OrderAttachment.Create(
+            tenantId,
+            orderId,
+            file.FileName,
+            storedFileName,
+            file.ContentType,
+            file.FileSizeBytes,
+            relativePath,
+            userId,
+            orderItemId);
+
+        await _attachmentRepository.AddAsync(attachment, cancellationToken);
     }
 }

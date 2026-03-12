@@ -118,3 +118,6 @@ Desktop.ini
 
 # Docker
 **/docker-compose.override.yml
+
+# Uploaded files
+**/uploads/

@@ -6,6 +6,7 @@ namespace AlGreenMES.Modules.Orders.Application.DTOs.Tablet;
 public record TabletActiveWorkDto(
     Guid OrderItemProcessId,
     Guid OrderId,
+    Guid OrderItemId,
     string OrderNumber,
     int Priority,
     DateTime DeliveryDate,

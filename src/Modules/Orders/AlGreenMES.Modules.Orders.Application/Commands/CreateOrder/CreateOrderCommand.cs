@@ -4,7 +4,7 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Commands.CreateOrder;
 
-public record CreateOrderItemInput(Guid ProductCategoryId, string ProductName, int Quantity, string? Notes);
+public record CreateOrderItemInput(Guid ProductCategoryId, string ProductName, int Quantity, string? Notes, List<CreateOrderAttachmentInput>? Attachments = null);
 public record CreateOrderAttachmentInput(string FileName, string ContentType, long FileSizeBytes, Stream FileStream);
 
 public record CreateOrderCommand(
@@ -18,4 +18,4 @@ public record CreateOrderCommand(
     int? CustomWarningDays = null,
     int? CustomCriticalDays = null,
     List<CreateOrderItemInput>? Items = null,
-    List<CreateOrderAttachmentInput>? Attachments = null) : IRequest<OrderDto>;
+    List<CreateOrderAttachmentInput>? Attachments = null) : IRequest<OrderDetailDto>;

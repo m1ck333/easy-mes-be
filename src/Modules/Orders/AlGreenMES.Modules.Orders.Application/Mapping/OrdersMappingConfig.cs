@@ -13,11 +13,13 @@ public static class OrdersMappingConfig
             .Map(dest => dest.ItemCount, src => src.Items.Count);
 
         config.NewConfig<Order, OrderDetailDto>()
-            .Map(dest => dest.Items, src => src.Items);
+            .Map(dest => dest.Items, src => src.Items)
+            .Map(dest => dest.Attachments, src => src.Attachments.Where(a => a.OrderItemId == null).ToList());
 
         config.NewConfig<OrderItem, OrderItemDto>()
             .Map(dest => dest.Processes, src => src.Processes)
-            .Map(dest => dest.SpecialRequests, src => src.SpecialRequests);
+            .Map(dest => dest.SpecialRequests, src => src.SpecialRequests)
+            .Map(dest => dest.Attachments, src => new List<OrderAttachmentDto>());
 
         config.NewConfig<OrderItemProcess, OrderItemProcessDto>()
             .Map(dest => dest.SubProcesses, src => src.SubProcesses);
@@ -32,6 +34,7 @@ public static class OrdersMappingConfig
         config.NewConfig<OrderItemProcess, TabletQueueItemDto>()
             .Map(dest => dest.OrderItemProcessId, src => src.Id)
             .Map(dest => dest.OrderId, src => src.OrderItem.Order.Id)
+            .Map(dest => dest.OrderItemId, src => src.OrderItemId)
             .Map(dest => dest.OrderNumber, src => src.OrderItem.Order.OrderNumber)
             .Map(dest => dest.Priority, src => src.OrderItem.Order.Priority)
             .Map(dest => dest.DeliveryDate, src => src.OrderItem.Order.DeliveryDate)
@@ -45,6 +48,7 @@ public static class OrdersMappingConfig
         config.NewConfig<OrderItemProcess, TabletActiveWorkDto>()
             .Map(dest => dest.OrderItemProcessId, src => src.Id)
             .Map(dest => dest.OrderId, src => src.OrderItem.Order.Id)
+            .Map(dest => dest.OrderItemId, src => src.OrderItemId)
             .Map(dest => dest.OrderNumber, src => src.OrderItem.Order.OrderNumber)
             .Map(dest => dest.Priority, src => src.OrderItem.Order.Priority)
             .Map(dest => dest.DeliveryDate, src => src.OrderItem.Order.DeliveryDate)
@@ -61,6 +65,7 @@ public static class OrdersMappingConfig
         config.NewConfig<OrderItemProcess, TabletIncomingDto>()
             .Map(dest => dest.OrderItemProcessId, src => src.Id)
             .Map(dest => dest.OrderId, src => src.OrderItem.Order.Id)
+            .Map(dest => dest.OrderItemId, src => src.OrderItemId)
             .Map(dest => dest.OrderNumber, src => src.OrderItem.Order.OrderNumber)
             .Map(dest => dest.Priority, src => src.OrderItem.Order.Priority)
             .Map(dest => dest.DeliveryDate, src => src.OrderItem.Order.DeliveryDate)

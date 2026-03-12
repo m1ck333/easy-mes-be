@@ -15,7 +15,10 @@ public class CheckInCommandHandler : IRequestHandler<CheckInCommand, WorkSession
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
 
-    public CheckInCommandHandler(IWorkSessionRepository workSessionRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
+    public CheckInCommandHandler(
+        IWorkSessionRepository workSessionRepository,
+        IOrdersUnitOfWork unitOfWork,
+        IProductionEventService eventService)
     {
         _workSessionRepository = workSessionRepository;
         _unitOfWork = unitOfWork;
