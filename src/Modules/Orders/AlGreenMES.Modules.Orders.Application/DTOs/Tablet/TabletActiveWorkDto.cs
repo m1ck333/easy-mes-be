@@ -30,4 +30,5 @@ public record TabletSubProcessDto(
     SubProcessStatus Status,
     int TotalDurationMinutes,
     bool IsWithdrawn,
-    bool IsTimerRunning);
+    bool IsTimerRunning,
+    DateTime? CurrentLogStartedAt);

@@ -67,14 +67,19 @@ public class GetTabletActiveWorkQueryHandler : IRequestHandler<GetTabletActiveWo
                         isTimerRunning = openLog != null;
                         currentLogStartedAt = openLog?.StartTime;
                         totalDuration = process.SubProcesses.Sum(sp => sp.TotalDurationMinutes);
-                        subDtos = process.SubProcesses.Select(sp => new TabletSubProcessDto(
-                            sp.Id,
-                            sp.SubProcessId,
-                            sp.Status,
-                            sp.TotalDurationMinutes,
-                            sp.IsWithdrawn,
-                            sp.Status == SubProcessStatus.InProgress && sp.GetOpenLog() != null
-                        )).ToList();
+                        subDtos = process.SubProcesses.Select(sp =>
+                        {
+                            var spOpenLog = sp.GetOpenLog();
+                            return new TabletSubProcessDto(
+                                sp.Id,
+                                sp.SubProcessId,
+                                sp.Status,
+                                sp.TotalDurationMinutes,
+                                sp.IsWithdrawn,
+                                sp.Status == SubProcessStatus.InProgress && spOpenLog != null,
+                                spOpenLog?.StartTime
+                            );
+                        }).ToList();
                     }
                     else
                     {
