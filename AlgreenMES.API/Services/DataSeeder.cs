@@ -154,29 +154,33 @@ public static class DataSeeder
 
         // 6. More Users
         var demoPassword = passwordHasher.HashPassword("Demo123!");
-        var userDefs = new (string Email, string FirstName, string LastName, UserRole Role, string? ProcessCode)[]
+        var userDefs = new (string Email, string FirstName, string LastName, UserRole Role, string[] ProcessCodes)[]
         {
-            ("manager@demo.com", "Marko", "Marković", UserRole.Manager, null),
-            ("sales@demo.com", "Ana", "Anić", UserRole.SalesManager, null),
-            ("coord@demo.com", "Ivan", "Ivić", UserRole.Coordinator, null),
-            ("worker1@demo.com", "Petar", "Petrović", UserRole.Department, "A"),
-            ("worker2@demo.com", "Jovan", "Jovanović", UserRole.Department, "E"),
-            ("worker3@demo.com", "Nikola", "Nikolić", UserRole.Department, "H"),
-            ("worker4@demo.com", "Luka", "Lukić", UserRole.Department, "J"),
+            ("manager@demo.com", "Marko", "Marković", UserRole.Manager, []),
+            ("sales@demo.com", "Ana", "Anić", UserRole.SalesManager, []),
+            ("coord@demo.com", "Ivan", "Ivić", UserRole.Coordinator, []),
+            ("worker1@demo.com", "Petar", "Petrović", UserRole.Department, ["A", "B"]),
+            ("worker2@demo.com", "Jovan", "Jovanović", UserRole.Department, ["E"]),
+            ("worker3@demo.com", "Nikola", "Nikolić", UserRole.Department, ["F", "G", "H"]),
+            ("worker4@demo.com", "Luka", "Lukić", UserRole.Department, ["J", "K"]),
         };
 
         var userEntities = new Dictionary<string, User> { ["admin@demo.com"] = adminUser };
 
-        foreach (var (email, firstName, lastName, role, processCode) in userDefs)
+        foreach (var (email, firstName, lastName, role, processCodes) in userDefs)
         {
-            var user = await identityDb.Users.FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId);
+            var user = await identityDb.Users
+                .Include(u => u.UserProcesses)
+                .FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId);
             if (user == null)
             {
                 user = User.Create(tenantId, email, demoPassword, firstName, lastName, role);
-                if (processCode != null)
+                if (processCodes.Length > 0)
                 {
-                    var process = processEntities.First(p => p.Code == processCode);
-                    user.AssignToProcess(process.Id);
+                    var processIds = processCodes
+                        .Select(code => processEntities.First(p => p.Code == code).Id)
+                        .ToList();
+                    user.AssignProcesses(tenantId, processIds);
                 }
                 identityDb.Users.Add(user);
             }
@@ -520,21 +524,17 @@ public static class DataSeeder
         var sales = userEntities["sales@demo.com"];
         var coord = userEntities["coord@demo.com"];
 
-        var processA = processEntities.First(p => p.Code == "A");
-        var processE = processEntities.First(p => p.Code == "E");
-        var processH = processEntities.First(p => p.Code == "H");
-
-        // Worker1 (Petar) on process A — checked out
-        var ws1 = WorkSession.CheckIn(tenantId, processA.Id, worker1.Id);
+        // Worker1 (Petar) — checked out
+        var ws1 = WorkSession.CheckIn(tenantId, worker1.Id);
         ws1.CheckOut();
         ordersDb.WorkSessions.Add(ws1);
 
-        // Worker2 (Jovan) on process E — still active
-        var ws2 = WorkSession.CheckIn(tenantId, processE.Id, worker2.Id);
+        // Worker2 (Jovan) — still active
+        var ws2 = WorkSession.CheckIn(tenantId, worker2.Id);
         ordersDb.WorkSessions.Add(ws2);
 
-        // Worker3 (Nikola) on process H — checked out
-        var ws3 = WorkSession.CheckIn(tenantId, processH.Id, worker3.Id);
+        // Worker3 (Nikola) — checked out
+        var ws3 = WorkSession.CheckIn(tenantId, worker3.Id);
         ws3.CheckOut();
         ordersDb.WorkSessions.Add(ws3);
 

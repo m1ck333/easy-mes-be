@@ -18,6 +18,14 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users
+            .Include(u => u.UserProcesses)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
+    public async Task<User?> GetByIdWithProcessesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Users
+            .Include(u => u.UserProcesses)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
@@ -25,6 +33,15 @@ public class UserRepository : IUserRepository
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
         return await _dbContext.Users
+            .Include(u => u.UserProcesses)
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.TenantId == tenantId, cancellationToken);
+    }
+
+    public async Task<User?> GetByEmailWithProcessesAsync(string email, Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        return await _dbContext.Users
+            .Include(u => u.UserProcesses)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.TenantId == tenantId, cancellationToken);
     }
 
@@ -52,13 +69,23 @@ public class UserRepository : IUserRepository
     public async Task<IReadOnlyList<User>> GetByProcessIdAsync(Guid processId, Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users
-            .Where(u => u.TenantId == tenantId && u.ProcessId == processId && u.IsActive)
+            .Include(u => u.UserProcesses)
+            .Where(u => u.TenantId == tenantId && u.IsActive && u.UserProcesses.Any(up => up.ProcessId == processId))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<User>> GetDepartmentUsersWithProcessesAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Users
+            .Include(u => u.UserProcesses)
+            .Where(u => u.TenantId == tenantId && u.Role == UserRole.Department && u.IsActive)
+            .OrderBy(u => u.LastName).ThenBy(u => u.FirstName)
             .ToListAsync(cancellationToken);
     }
 
     public async Task<PagedResult<User>> GetPagedAsync(Guid tenantId, UserRole? role, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.Users.Where(u => u.TenantId == tenantId);
+        var query = _dbContext.Users.Include(u => u.UserProcesses).Where(u => u.TenantId == tenantId);
 
         if (role.HasValue)
             query = query.Where(u => u.Role == role.Value);

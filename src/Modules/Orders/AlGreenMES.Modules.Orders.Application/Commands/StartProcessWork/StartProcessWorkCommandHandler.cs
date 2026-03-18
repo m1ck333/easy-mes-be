@@ -15,6 +15,7 @@ public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCo
 {
     private readonly IOrderItemProcessRepository _processRepository;
     private readonly IProcessRepository _productionProcessRepository;
+    private readonly IProductCategoryRepository _categoryRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
     private readonly ILogger<StartProcessWorkCommandHandler> _logger;
@@ -22,12 +23,14 @@ public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCo
     public StartProcessWorkCommandHandler(
         IOrderItemProcessRepository processRepository,
         IProcessRepository productionProcessRepository,
+        IProductCategoryRepository categoryRepository,
         IOrdersUnitOfWork unitOfWork,
         IProductionEventService eventService,
         ILogger<StartProcessWorkCommandHandler> logger)
     {
         _processRepository = processRepository;
         _productionProcessRepository = productionProcessRepository;
+        _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _eventService = eventService;
         _logger = logger;
@@ -48,10 +51,28 @@ public class StartProcessWorkCommandHandler : IRequestHandler<StartProcessWorkCo
         if (process.OrderItem.Order.Status != OrderStatus.Active)
             throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active to start work.");
 
-        // Validate dependencies: all sibling processes that this one depends on must be Completed
-        var siblingProcesses = await _processRepository.GetByOrderItemIdAsync(process.OrderItemId, cancellationToken);
-        // Dependencies are modeled via ProcessId ordering — processes with lower sequence must complete first
-        // The dependency check is done by the caller ensuring all prior processes are done
+        // Validate dependencies via ProductCategoryDependency
+        var orderItem = process.OrderItem;
+        var category = await _categoryRepository.GetByIdWithDetailsAsync(orderItem.ProductCategoryId, cancellationToken);
+        if (category != null)
+        {
+            var dependencies = category.Dependencies
+                .Where(d => d.ProcessId == process.ProcessId)
+                .Select(d => d.DependsOnProcessId)
+                .ToList();
+
+            foreach (var depProcessId in dependencies)
+            {
+                var depProcess = orderItem.Processes.FirstOrDefault(p => p.ProcessId == depProcessId);
+                if (depProcess != null && depProcess.Status != ProcessStatus.Completed && depProcess.Status != ProcessStatus.Withdrawn)
+                {
+                    var depInfo = await _productionProcessRepository.GetByIdAsync(depProcessId, cancellationToken);
+                    var depName = depInfo?.Name ?? depProcessId.ToString();
+                    throw new DomainException("DEPENDENCY_NOT_MET",
+                        $"Cannot start. Process '{depName}' must be completed first.");
+                }
+            }
+        }
 
         process.Start();
         _logger.LogInformation("[StartProcess] Process started. Starting first sub-process...");

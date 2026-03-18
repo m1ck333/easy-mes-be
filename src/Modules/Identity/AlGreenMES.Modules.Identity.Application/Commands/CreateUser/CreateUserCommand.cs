@@ -11,4 +11,4 @@ public record CreateUserCommand(
     string FirstName,
     string LastName,
     UserRole Role,
-    Guid? ProcessId) : IRequest<UserDto>;
+    List<Guid>? ProcessIds) : IRequest<UserDto>;

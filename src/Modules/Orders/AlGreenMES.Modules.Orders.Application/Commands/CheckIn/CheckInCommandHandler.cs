@@ -31,13 +31,13 @@ public class CheckInCommandHandler : IRequestHandler<CheckInCommand, WorkSession
         if (active != null)
             throw new DomainException("ALREADY_CHECKED_IN", "User already has an active session.");
 
-        var session = WorkSession.CheckIn(request.TenantId, request.ProcessId, request.UserId);
+        var session = WorkSession.CheckIn(request.TenantId, request.UserId);
 
         await _workSessionRepository.AddAsync(session, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await _eventService.NotifyWorkerCheckedInAsync(
-            new WorkerCheckedInEvent(request.UserId, request.ProcessId, session.Id, request.TenantId), cancellationToken);
+            new WorkerCheckedInEvent(request.UserId, session.Id, request.TenantId), cancellationToken);
 
         return session.Adapt<WorkSessionDto>();
     }

@@ -7,6 +7,7 @@ namespace AlGreenMES.Modules.Identity.Infrastructure.Persistence;
 public class IdentityDbContext : DbContext, IIdentityUnitOfWork
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserProcess> UserProcesses => Set<UserProcess>();
     public DbSet<Shift> Shifts => Set<Shift>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

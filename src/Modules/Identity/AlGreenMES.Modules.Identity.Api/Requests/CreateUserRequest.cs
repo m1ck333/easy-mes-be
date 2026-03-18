@@ -9,4 +9,4 @@ public record CreateUserRequest(
     string FirstName,
     string LastName,
     UserRole Role,
-    Guid? ProcessId);
+    List<Guid>? ProcessIds);

@@ -69,7 +69,7 @@ public class UsersController : ControllerBase
                 request.FirstName,
                 request.LastName,
                 request.Role,
-                request.ProcessId),
+                request.ProcessIds),
             cancellationToken);
 
         return CreatedAtAction(nameof(GetUserById), new { id = result.Id }, result);
@@ -80,7 +80,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new UpdateUserCommand(id, request.FirstName, request.LastName, request.Role, request.IsActive, request.CanIncludeWithdrawnInAnalysis, request.ProcessId),
+            new UpdateUserCommand(id, request.TenantId, request.FirstName, request.LastName, request.Role, request.IsActive, request.CanIncludeWithdrawnInAnalysis, request.ProcessIds),
             cancellationToken);
 
         return Ok(result);

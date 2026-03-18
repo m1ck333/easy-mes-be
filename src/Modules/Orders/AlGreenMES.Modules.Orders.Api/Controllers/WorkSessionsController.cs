@@ -44,7 +44,7 @@ public class WorkSessionsController : ControllerBase
     public async Task<IActionResult> CheckIn([FromBody] CheckInRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new CheckInCommand(request.TenantId, request.ProcessId, request.UserId),
+            new CheckInCommand(request.TenantId, request.UserId),
             cancellationToken);
         return Ok(result);
     }

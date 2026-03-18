@@ -26,4 +26,12 @@ public class OrderItemSubProcessRepository : IOrderItemSubProcessRepository
                     .ThenInclude(oi => oi.Order)
             .FirstOrDefaultAsync(sp => sp.Id == id, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<OrderItemSubProcessLog>> GetActiveLogsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<OrderItemSubProcessLog>()
+            .Include(l => l.OrderItemSubProcess)
+            .Where(l => l.UserId == userId && l.EndTime == null)
+            .ToListAsync(cancellationToken);
+    }
 }

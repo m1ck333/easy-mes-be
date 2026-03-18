@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.Tablet.GetTabletQueue;
 
-public record GetTabletQueueQuery(Guid ProcessId, Guid TenantId) : IRequest<IReadOnlyList<TabletQueueItemDto>>;
+public record GetTabletQueueQuery(Guid TenantId, Guid UserId) : IRequest<IReadOnlyList<ProcessGroupDto<TabletQueueItemDto>>>;

@@ -12,6 +12,6 @@ public class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Role).IsInEnum();
-        RuleFor(x => x.ProcessId).NotEmpty().When(x => x.Role == UserRole.Department);
+        RuleFor(x => x.ProcessIds).NotEmpty().When(x => x.Role == UserRole.Department);
     }
 }
