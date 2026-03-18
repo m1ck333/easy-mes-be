@@ -5,7 +5,6 @@ namespace AlGreenMES.Modules.Orders.Domain.Entities;
 
 public class WorkSession : TenantEntity
 {
-    public Guid ProcessId { get; private set; }
     public Guid UserId { get; private set; }
     public DateTime CheckInTime { get; private set; }
     public DateTime? CheckOutTime { get; private set; }
@@ -20,12 +19,11 @@ public class WorkSession : TenantEntity
     {
     }
 
-    public static WorkSession CheckIn(Guid tenantId, Guid processId, Guid userId)
+    public static WorkSession CheckIn(Guid tenantId, Guid userId)
     {
         return new WorkSession
         {
             TenantId = tenantId,
-            ProcessId = processId,
             UserId = userId,
             CheckInTime = DateTime.UtcNow,
             Date = DateOnly.FromDateTime(DateTime.UtcNow)

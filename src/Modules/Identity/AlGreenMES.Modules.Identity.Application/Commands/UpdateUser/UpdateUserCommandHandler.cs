@@ -21,11 +21,16 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, UserD
 
     public async Task<UserDto> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken)
+        var user = await _userRepository.GetByIdWithProcessesAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("User", request.Id);
 
         user.Update(request.FirstName, request.LastName, request.Role, request.IsActive, request.CanIncludeWithdrawnInAnalysis);
-        user.AssignToProcess(request.Role == UserRole.Department ? request.ProcessId : null);
+
+        if (request.Role == UserRole.Department && request.ProcessIds != null)
+            user.AssignProcesses(request.TenantId, request.ProcessIds);
+        else if (request.Role != UserRole.Department)
+            user.AssignProcesses(request.TenantId, []);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return user.Adapt<UserDto>();

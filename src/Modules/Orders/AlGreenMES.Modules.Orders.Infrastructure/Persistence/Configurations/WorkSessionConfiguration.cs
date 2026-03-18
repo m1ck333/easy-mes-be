@@ -24,7 +24,6 @@ public class WorkSessionConfiguration : IEntityTypeConfiguration<WorkSession>
         builder.Ignore(ws => ws.IsActive);
 
         builder.HasIndex(ws => ws.UserId);
-        builder.HasIndex(ws => ws.ProcessId);
         builder.HasIndex(ws => new { ws.TenantId, ws.Date });
     }
 }

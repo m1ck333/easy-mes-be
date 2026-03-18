@@ -132,38 +132,36 @@ public class DashboardQueryService : IDashboardQueryService
         var processes = await _productionDb.Processes
             .AsNoTracking()
             .Where(p => p.TenantId == tenantId && p.IsActive)
-            .OrderBy(p => p.SequenceOrder)
+            .ToDictionaryAsync(p => p.Id, p => p.Code, cancellationToken);
+
+        var departmentUsers = await _identityDb.Users
+            .AsNoTracking()
+            .Include(u => u.UserProcesses)
+            .Where(u => u.TenantId == tenantId && u.Role == Identity.Domain.Entities.UserRole.Department && u.IsActive)
+            .OrderBy(u => u.LastName).ThenBy(u => u.FirstName)
             .ToListAsync(cancellationToken);
 
         var activeSessions = await _ordersDb.WorkSessions
             .AsNoTracking()
             .Where(ws => ws.TenantId == tenantId && ws.CheckOutTime == null)
-            .ToListAsync(cancellationToken);
-
-        var userIds = activeSessions.Select(s => s.UserId).Distinct().ToList();
-        var users = await _identityDb.Users
-            .AsNoTracking()
-            .Where(u => userIds.Contains(u.Id))
-            .ToDictionaryAsync(u => u.Id, u => u, cancellationToken);
+            .ToDictionaryAsync(ws => ws.UserId, ws => ws, cancellationToken);
 
         var result = new List<WorkerStatusDto>();
 
-        foreach (var process in processes)
+        foreach (var user in departmentUsers)
         {
-            var session = activeSessions.FirstOrDefault(s => s.ProcessId == process.Id);
-            WorkerDto? worker = null;
-
-            if (session != null && users.TryGetValue(session.UserId, out var user))
-            {
-                worker = new WorkerDto(user.Id, $"{user.FirstName} {user.LastName}", session.CheckInTime);
-            }
+            var session = activeSessions.GetValueOrDefault(user.Id);
+            var assignedProcessCodes = user.UserProcesses
+                .Select(up => processes.GetValueOrDefault(up.ProcessId, "?"))
+                .OrderBy(code => code)
+                .ToList();
 
             result.Add(new WorkerStatusDto(
-                process.Id,
-                process.Code,
-                process.Name,
+                user.Id,
+                $"{user.FirstName} {user.LastName}",
                 session != null,
-                worker));
+                session?.CheckInTime,
+                assignedProcessCodes));
         }
 
         return result;

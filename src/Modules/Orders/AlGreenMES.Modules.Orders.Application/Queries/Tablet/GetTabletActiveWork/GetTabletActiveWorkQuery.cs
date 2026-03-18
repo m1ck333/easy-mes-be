@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.Tablet.GetTabletActiveWork;
 
-public record GetTabletActiveWorkQuery(Guid ProcessId, Guid TenantId) : IRequest<IReadOnlyList<TabletActiveWorkDto>>;
+public record GetTabletActiveWorkQuery(Guid TenantId, Guid UserId) : IRequest<IReadOnlyList<ProcessGroupDto<TabletActiveWorkDto>>>;

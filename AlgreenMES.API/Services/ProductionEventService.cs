@@ -168,20 +168,14 @@ public class ProductionEventService : IProductionEventService
 
     public async Task NotifyWorkerCheckedInAsync(WorkerCheckedInEvent evt, CancellationToken cancellationToken = default)
     {
-        await Task.WhenAll(
-            _hubContext.Clients.Group($"tenant-{evt.TenantId}")
-                .SendAsync("WorkerCheckedIn", evt, cancellationToken),
-            _hubContext.Clients.Group($"process-{evt.ProcessId}")
-                .SendAsync("WorkerCheckedIn", evt, cancellationToken));
+        await _hubContext.Clients.Group($"tenant-{evt.TenantId}")
+            .SendAsync("WorkerCheckedIn", evt, cancellationToken);
     }
 
     public async Task NotifyWorkerCheckedOutAsync(WorkerCheckedOutEvent evt, CancellationToken cancellationToken = default)
     {
-        await Task.WhenAll(
-            _hubContext.Clients.Group($"tenant-{evt.TenantId}")
-                .SendAsync("WorkerCheckedOut", evt, cancellationToken),
-            _hubContext.Clients.Group($"process-{evt.ProcessId}")
-                .SendAsync("WorkerCheckedOut", evt, cancellationToken));
+        await _hubContext.Clients.Group($"tenant-{evt.TenantId}")
+            .SendAsync("WorkerCheckedOut", evt, cancellationToken);
     }
 
     public async Task NotifyDeadlineWarningAsync(DeadlineWarningEvent evt, CancellationToken cancellationToken = default)

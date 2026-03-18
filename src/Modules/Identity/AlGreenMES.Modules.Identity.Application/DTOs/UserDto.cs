@@ -10,8 +10,11 @@ public record UserDto(
     string LastName,
     string FullName,
     UserRole Role,
-    Guid? ProcessId,
     bool CanIncludeWithdrawnInAnalysis,
     bool IsActive,
+    List<UserProcessDto> Processes,
     DateTime CreatedAt,
     DateTime? UpdatedAt);
+
+public record UserProcessDto(
+    Guid ProcessId);

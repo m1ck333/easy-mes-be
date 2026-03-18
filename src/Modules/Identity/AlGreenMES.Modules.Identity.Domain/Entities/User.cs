@@ -10,9 +10,11 @@ public class User : AuditableEntity
     public string FirstName { get; private set; } = null!;
     public string LastName { get; private set; } = null!;
     public UserRole Role { get; private set; }
-    public Guid? ProcessId { get; private set; }
     public bool CanIncludeWithdrawnInAnalysis { get; private set; }
     public bool IsActive { get; private set; }
+
+    private readonly List<UserProcess> _userProcesses = new();
+    public IReadOnlyCollection<UserProcess> UserProcesses => _userProcesses.AsReadOnly();
 
     public string FullName => $"{FirstName} {LastName}";
 
@@ -71,8 +73,22 @@ public class User : AuditableEntity
         PasswordHash = newPasswordHash;
     }
 
-    public void AssignToProcess(Guid? processId)
+    public void AssignProcesses(Guid tenantId, IEnumerable<Guid> processIds)
     {
-        ProcessId = processId;
+        _userProcesses.Clear();
+        foreach (var processId in processIds.Distinct())
+        {
+            _userProcesses.Add(UserProcess.Create(tenantId, Id, processId));
+        }
+    }
+
+    public List<Guid> GetProcessIds()
+    {
+        return _userProcesses.Select(up => up.ProcessId).ToList();
+    }
+
+    public bool HasProcess(Guid processId)
+    {
+        return _userProcesses.Any(up => up.ProcessId == processId);
     }
 }

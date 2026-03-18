@@ -47,5 +47,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => new { u.TenantId, u.Email })
             .IsUnique();
+
+        builder.HasMany(u => u.UserProcesses)
+            .WithOne(up => up.User)
+            .HasForeignKey(up => up.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Metadata.FindNavigation(nameof(User.UserProcesses))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }

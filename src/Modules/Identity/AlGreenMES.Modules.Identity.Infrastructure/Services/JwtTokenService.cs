@@ -39,11 +39,6 @@ public class JwtTokenService : IJwtTokenService
             new("last_name", user.LastName)
         };
 
-        if (user.ProcessId.HasValue)
-        {
-            claims.Add(new Claim("process_id", user.ProcessId.Value.ToString()));
-        }
-
         var token = new JwtSecurityToken(
             issuer: issuer,
             audience: audience,
