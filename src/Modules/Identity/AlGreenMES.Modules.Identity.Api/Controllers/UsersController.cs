@@ -1,6 +1,7 @@
 using AlGreenMES.Modules.Identity.Api.Requests;
 using AlGreenMES.Modules.Identity.Application.Commands.ChangePassword;
 using AlGreenMES.Modules.Identity.Application.Commands.CreateUser;
+using AlGreenMES.Modules.Identity.Application.Commands.ResetPassword;
 using AlGreenMES.Modules.Identity.Application.Commands.UpdateUser;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUserById;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUsers;
@@ -91,6 +92,17 @@ public class UsersController : ControllerBase
     {
         await _mediator.Send(
             new ChangePasswordCommand(id, request.CurrentPassword, request.NewPassword),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/reset-password")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ResetPassword(Guid id, [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(
+            new ResetPasswordCommand(id, request.NewPassword),
             cancellationToken);
 
         return NoContent();
