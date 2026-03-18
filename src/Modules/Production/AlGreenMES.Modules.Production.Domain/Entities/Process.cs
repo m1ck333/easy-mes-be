@@ -36,11 +36,14 @@ public class Process : AuditableEntity
         return process;
     }
 
-    public void Update(string name, int sequenceOrder)
+    public void Update(string code, string name, int sequenceOrder)
     {
+        if (string.IsNullOrWhiteSpace(code))
+            throw new DomainException("INVALID_CODE", "Process code is required.");
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("INVALID_NAME", "Process name is required.");
 
+        Code = code.Trim().ToUpperInvariant();
         Name = name.Trim();
         SequenceOrder = sequenceOrder;
     }

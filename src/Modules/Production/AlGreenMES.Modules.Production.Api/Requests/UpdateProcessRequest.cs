@@ -3,6 +3,7 @@ namespace AlGreenMES.Modules.Production.Api.Requests;
 public record UpdateProcessSubProcessAddInput(string Name, int SequenceOrder);
 
 public record UpdateProcessRequest(
+    string Code,
     string Name,
     int SequenceOrder,
     List<UpdateProcessSubProcessAddInput>? AddSubProcesses = null,

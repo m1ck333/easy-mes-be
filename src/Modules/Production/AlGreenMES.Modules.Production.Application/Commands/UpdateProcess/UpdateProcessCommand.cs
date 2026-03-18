@@ -7,6 +7,7 @@ public record UpdateProcessSubProcessAdd(string Name, int SequenceOrder);
 
 public record UpdateProcessCommand(
     Guid Id,
+    string Code,
     string Name,
     int SequenceOrder,
     List<UpdateProcessSubProcessAdd>? AddSubProcesses = null,

@@ -25,7 +25,7 @@ public class ReorderProcessesCommandHandler : IRequestHandler<ReorderProcessesCo
             var process = processes.FirstOrDefault(p => p.Id == item.Id);
             if (process != null)
             {
-                process.Update(process.Name, item.SequenceOrder);
+                process.Update(process.Code, process.Name, item.SequenceOrder);
             }
         }
 

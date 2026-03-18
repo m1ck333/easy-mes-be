@@ -21,7 +21,7 @@ public class CreateProcessCommandHandler : IRequestHandler<CreateProcessCommand,
 
     public async Task<ProcessDto> Handle(CreateProcessCommand request, CancellationToken cancellationToken)
     {
-        var codeExists = await _processRepository.ExistsByCodeAsync(request.Code, request.TenantId, cancellationToken);
+        var codeExists = await _processRepository.ExistsByCodeAsync(request.Code, request.TenantId, null, cancellationToken);
         if (codeExists)
             throw new DomainException("PROCESS_CODE_EXISTS", $"A process with code '{request.Code}' already exists.");
 

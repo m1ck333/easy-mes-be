@@ -42,11 +42,13 @@ public class ProcessRepository : IProcessRepository
         await _dbContext.Processes.AddAsync(process, cancellationToken);
     }
 
-    public async Task<bool> ExistsByCodeAsync(string code, Guid tenantId, CancellationToken cancellationToken = default)
+    public async Task<bool> ExistsByCodeAsync(string code, Guid tenantId, Guid? excludeId = null, CancellationToken cancellationToken = default)
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
-        return await _dbContext.Processes
-            .AnyAsync(p => p.Code == normalizedCode && p.TenantId == tenantId, cancellationToken);
+        var query = _dbContext.Processes.Where(p => p.Code == normalizedCode && p.TenantId == tenantId);
+        if (excludeId.HasValue)
+            query = query.Where(p => p.Id != excludeId.Value);
+        return await query.AnyAsync(cancellationToken);
     }
 
     public async Task<PagedResult<Process>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)

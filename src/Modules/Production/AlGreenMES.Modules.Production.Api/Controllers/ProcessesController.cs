@@ -76,7 +76,7 @@ public class ProcessesController : ControllerBase
     {
         var result = await _mediator.Send(
             new UpdateProcessCommand(
-                id, request.Name, request.SequenceOrder,
+                id, request.Code, request.Name, request.SequenceOrder,
                 request.AddSubProcesses?.Select(s => new UpdateProcessSubProcessAdd(s.Name, s.SequenceOrder)).ToList(),
                 request.DeactivateSubProcessIds),
             cancellationToken);

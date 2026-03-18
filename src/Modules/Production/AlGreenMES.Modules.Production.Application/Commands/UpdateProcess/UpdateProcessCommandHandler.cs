@@ -26,7 +26,11 @@ public class UpdateProcessCommandHandler : IRequestHandler<UpdateProcessCommand,
         var process = await _processRepository.GetByIdWithSubProcessesAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Process", request.Id);
 
-        process.Update(request.Name, request.SequenceOrder);
+        var codeExists = await _processRepository.ExistsByCodeAsync(request.Code, process.TenantId, request.Id, cancellationToken);
+        if (codeExists)
+            throw new DomainException("PROCESS_CODE_EXISTS", $"A process with code '{request.Code}' already exists.");
+
+        process.Update(request.Code, request.Name, request.SequenceOrder);
 
         // Deactivate sub-processes
         if (request.DeactivateSubProcessIds is { Count: > 0 })
