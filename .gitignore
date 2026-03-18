@@ -121,3 +121,6 @@ Desktop.ini
 
 # Uploaded files
 **/uploads/
+
+# Publish output
+publish/
