@@ -1,6 +1,7 @@
 using AlGreenMES.Modules.Identity.Api.Requests;
 using AlGreenMES.Modules.Identity.Application.Commands.ChangePassword;
 using AlGreenMES.Modules.Identity.Application.Commands.CreateUser;
+using AlGreenMES.Modules.Identity.Application.Commands.DeleteUser;
 using AlGreenMES.Modules.Identity.Application.Commands.ResetPassword;
 using AlGreenMES.Modules.Identity.Application.Commands.UpdateUser;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUserById;
@@ -105,6 +106,14 @@ public class UsersController : ControllerBase
             new ResetPasswordCommand(id, request.NewPassword),
             cancellationToken);
 
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new DeleteUserCommand(id), cancellationToken);
         return NoContent();
     }
 }

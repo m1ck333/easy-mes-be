@@ -83,6 +83,11 @@ public class UserRepository : IUserRepository
             .ToListAsync(cancellationToken);
     }
 
+    public void Delete(User user)
+    {
+        _dbContext.Users.Remove(user);
+    }
+
     public async Task<PagedResult<User>> GetPagedAsync(Guid tenantId, UserRole? role, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Users.Include(u => u.UserProcesses).Where(u => u.TenantId == tenantId);
