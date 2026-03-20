@@ -26,7 +26,7 @@ public class GetBlockRequestsQueryHandler : IRequestHandler<GetBlockRequestsQuer
         {
             var order = b.OrderItemProcess?.OrderItem?.Order;
             var dto = b.Adapt<BlockRequestDto>();
-            return dto with { OrderId = order?.Id, OrderNumber = order?.OrderNumber };
+            return dto with { OrderId = order?.Id, OrderNumber = order?.OrderNumber, CurrentProcessStatus = b.OrderItemProcess?.Status };
         });
     }
 }

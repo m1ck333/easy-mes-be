@@ -93,7 +93,7 @@ public class OrderItemProcess : TenantEntity
     {
         if (Status != ProcessStatus.Blocked)
             throw new DomainException("NOT_BLOCKED", "Process is not blocked.");
-        Status = StartedAt.HasValue ? ProcessStatus.InProgress : ProcessStatus.Pending;
+        Status = ProcessStatus.Pending;
         UnblockedAt = DateTime.UtcNow;
         UnblockedByUserId = userId;
         UpdatedAt = DateTime.UtcNow;
