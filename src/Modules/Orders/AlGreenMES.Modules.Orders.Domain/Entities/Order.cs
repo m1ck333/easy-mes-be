@@ -100,6 +100,7 @@ public class Order : AuditableEntity
         if (Status == OrderStatus.Completed || Status == OrderStatus.Cancelled)
             throw new DomainException("INVALID_STATUS", "Cannot cancel completed or already cancelled orders.");
         Status = OrderStatus.Cancelled;
+        Priority = 0;
     }
 
     public void Reopen()

@@ -16,4 +16,5 @@ public record BlockRequestDto(
     string? BlockReason,
     string? RejectionNote,
     Guid? OrderId,
-    string? OrderNumber);
+    string? OrderNumber,
+    ProcessStatus? CurrentProcessStatus);

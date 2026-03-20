@@ -5,6 +5,7 @@ using AlGreenMES.Modules.Production.Application.Commands.CreateProcess;
 using AlGreenMES.Modules.Production.Application.Commands.DeactivateProcess;
 using AlGreenMES.Modules.Production.Application.Commands.DeactivateSubProcess;
 using AlGreenMES.Modules.Production.Application.Commands.ReorderProcesses;
+using AlGreenMES.Modules.Production.Application.Commands.ReorderSubProcesses;
 using AlGreenMES.Modules.Production.Application.Commands.UpdateProcess;
 using AlGreenMES.Modules.Production.Application.Commands.UpdateSubProcess;
 using AlGreenMES.Modules.Production.Application.Queries.GetProcessById;
@@ -127,6 +128,17 @@ public class ProcessesController : ControllerBase
             new UpdateSubProcessCommand(processId, subProcessId, request.Name, request.SequenceOrder),
             cancellationToken);
         return Ok(result);
+    }
+
+    [HttpPost("{processId:guid}/sub-processes/reorder")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> ReorderSubProcesses(Guid processId, [FromBody] ReorderSubProcessesRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new ReorderSubProcessesCommand(
+            processId,
+            request.Items.Select(i => new Application.Commands.ReorderSubProcesses.ReorderSubProcessesItem(i.Id, i.SequenceOrder)).ToList()),
+            cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("{processId:guid}/sub-processes/{subProcessId:guid}")]
