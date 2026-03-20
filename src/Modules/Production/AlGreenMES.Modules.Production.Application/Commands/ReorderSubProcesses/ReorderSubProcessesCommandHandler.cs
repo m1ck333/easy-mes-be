@@ -22,6 +22,15 @@ public class ReorderSubProcessesCommandHandler : IRequestHandler<ReorderSubProce
             .Where(s => ids.Contains(s.Id) && s.ProcessId == request.ProcessId)
             .ToListAsync(cancellationToken);
 
+        // First pass: shift to high temp values to avoid unique (ProcessId, SequenceOrder) constraint
+        // violations when EF Core sends individual UPDATE statements within the transaction.
+        for (int i = 0; i < subProcesses.Count; i++)
+        {
+            subProcesses[i].Update(subProcesses[i].Name, 10000 + i);
+        }
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Second pass: set final sequence orders
         foreach (var item in request.Items)
         {
             var sub = subProcesses.FirstOrDefault(s => s.Id == item.Id);
