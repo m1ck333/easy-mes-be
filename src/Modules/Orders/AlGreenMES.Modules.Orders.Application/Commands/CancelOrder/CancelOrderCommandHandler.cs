@@ -10,10 +10,13 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Uni
     private readonly IOrderRepository _orderRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
 
-    public CancelOrderCommandHandler(IOrderRepository orderRepository, IOrdersUnitOfWork unitOfWork)
+    private readonly IProductionEventService _eventService;
+
+    public CancelOrderCommandHandler(IOrderRepository orderRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
+        _eventService = eventService;
     }
 
     public async Task<Unit> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
@@ -23,6 +26,7 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Uni
 
         order.Cancel();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _eventService.NotifyOrderUpdatedAsync(order.TenantId, order.Id, cancellationToken);
 
         return Unit.Value;
     }

@@ -10,10 +10,13 @@ public class ReopenOrderCommandHandler : IRequestHandler<ReopenOrderCommand, Uni
     private readonly IOrderRepository _orderRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
 
-    public ReopenOrderCommandHandler(IOrderRepository orderRepository, IOrdersUnitOfWork unitOfWork)
+    private readonly IProductionEventService _eventService;
+
+    public ReopenOrderCommandHandler(IOrderRepository orderRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
+        _eventService = eventService;
     }
 
     public async Task<Unit> Handle(ReopenOrderCommand request, CancellationToken cancellationToken)
@@ -23,6 +26,7 @@ public class ReopenOrderCommandHandler : IRequestHandler<ReopenOrderCommand, Uni
 
         order.Reopen();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _eventService.NotifyOrderUpdatedAsync(order.TenantId, order.Id, cancellationToken);
 
         return Unit.Value;
     }

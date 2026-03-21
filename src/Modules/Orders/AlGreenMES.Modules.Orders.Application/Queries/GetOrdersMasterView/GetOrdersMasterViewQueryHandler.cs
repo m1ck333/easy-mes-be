@@ -31,11 +31,15 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
         var allProcesses = order.Items.SelectMany(i => i.Processes).ToList();
         var nonWithdrawn = allProcesses.Where(p => !p.IsWithdrawn).ToList();
 
-        var processStatuses = allProcesses
-            .GroupBy(p => p.ProcessId)
-            .ToDictionary(
-                g => g.Key.ToString(),
-                g => AggregateStatus(g).ToString());
+        var grouped = allProcesses.GroupBy(p => p.ProcessId).ToList();
+
+        var processStatuses = grouped.ToDictionary(
+            g => g.Key.ToString(),
+            g => AggregateStatus(g).ToString());
+
+        var processDurations = grouped.ToDictionary(
+            g => g.Key.ToString(),
+            g => g.Sum(p => p.TotalDurationMinutes));
 
         var completedProcesses = nonWithdrawn.Count(p => p.Status == ProcessStatus.Completed);
         var totalProcesses = nonWithdrawn.Count;
@@ -52,6 +56,7 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             completedProcesses,
             totalProcesses,
             processStatuses,
+            processDurations,
             order.Attachments.Count,
             order.CreatedAt);
     }

@@ -16,16 +16,20 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Ord
     private readonly IProcessRepository _processRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
 
+    private readonly IProductionEventService _eventService;
+
     public UpdateOrderCommandHandler(
         IOrderRepository orderRepository,
         IProductCategoryRepository categoryRepository,
         IProcessRepository processRepository,
-        IOrdersUnitOfWork unitOfWork)
+        IOrdersUnitOfWork unitOfWork,
+        IProductionEventService eventService)
     {
         _orderRepository = orderRepository;
         _categoryRepository = categoryRepository;
         _processRepository = processRepository;
         _unitOfWork = unitOfWork;
+        _eventService = eventService;
     }
 
     public async Task<OrderDto> Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
@@ -119,6 +123,7 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Ord
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _eventService.NotifyOrderUpdatedAsync(order.TenantId, order.Id, cancellationToken);
 
         return order.Adapt<OrderDto>();
     }

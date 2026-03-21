@@ -77,6 +77,8 @@ public class Order : AuditableEntity
             throw new DomainException("INVALID_STATUS", "Only draft orders can be activated.");
         if (!_items.Any())
             throw new DomainException("NO_ITEMS", "Order must have at least one item.");
+        if (Priority <= 0)
+            throw new DomainException("PRIORITY_REQUIRED", "Priority must be set before activation.");
 
         Status = OrderStatus.Active;
     }

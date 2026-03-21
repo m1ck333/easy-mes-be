@@ -9,11 +9,13 @@ public class PauseOrderCommandHandler : IRequestHandler<PauseOrderCommand, Unit>
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
+    private readonly IProductionEventService _eventService;
 
-    public PauseOrderCommandHandler(IOrderRepository orderRepository, IOrdersUnitOfWork unitOfWork)
+    public PauseOrderCommandHandler(IOrderRepository orderRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
+        _eventService = eventService;
     }
 
     public async Task<Unit> Handle(PauseOrderCommand request, CancellationToken cancellationToken)
@@ -23,6 +25,7 @@ public class PauseOrderCommandHandler : IRequestHandler<PauseOrderCommand, Unit>
 
         order.Pause();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _eventService.NotifyOrderUpdatedAsync(order.TenantId, order.Id, cancellationToken);
 
         return Unit.Value;
     }

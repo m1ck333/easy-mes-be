@@ -82,6 +82,7 @@ public class Program
 
         // SignalR event service
         builder.Services.AddScoped<IProductionEventService, ProductionEventService>();
+        builder.Services.AddScoped<IProcessChangeNotifier, ProcessChangeNotifier>();
 
         // Background services
         builder.Services.AddHostedService<DeadlineWarningService>();

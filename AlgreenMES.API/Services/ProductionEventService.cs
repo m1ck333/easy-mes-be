@@ -224,6 +224,12 @@ public class ProductionEventService : IProductionEventService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task NotifyOrderUpdatedAsync(Guid tenantId, Guid orderId, CancellationToken cancellationToken = default)
+    {
+        await _hubContext.Clients.Group($"tenant-{tenantId}")
+            .SendAsync("OrderUpdated", new { TenantId = tenantId, OrderId = orderId }, cancellationToken);
+    }
+
     public async Task NotifyProcessReadyForQueueAsync(ProcessReadyForQueueEvent evt, CancellationToken cancellationToken = default)
     {
         // Send SignalR to workers on the target process

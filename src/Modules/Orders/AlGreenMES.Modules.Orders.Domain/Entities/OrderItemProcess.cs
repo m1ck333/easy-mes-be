@@ -73,6 +73,15 @@ public class OrderItemProcess : TenantEntity
     {
         if (_subProcesses.Any() && !_subProcesses.All(sp => sp.Status == SubProcessStatus.Completed || sp.Status == SubProcessStatus.Withdrawn))
             throw new DomainException("SUBPROCESSES_NOT_COMPLETE", "All sub-processes must be completed first.");
+
+        // Accumulate current session duration before completing
+        if (!PausedAt.HasValue && (StartedAt.HasValue || ResumedAt.HasValue))
+        {
+            var sessionStart = ResumedAt ?? StartedAt ?? DateTime.UtcNow;
+            var sessionSeconds = (int)(DateTime.UtcNow - sessionStart).TotalSeconds;
+            TotalDurationMinutes += sessionSeconds;
+        }
+
         Status = ProcessStatus.Completed;
         CompletedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;

@@ -16,4 +16,5 @@ public interface IProductionEventService
     Task NotifyWorkerCheckedOutAsync(WorkerCheckedOutEvent evt, CancellationToken cancellationToken = default);
     Task NotifyDeadlineWarningAsync(DeadlineWarningEvent evt, CancellationToken cancellationToken = default);
     Task NotifyProcessReadyForQueueAsync(ProcessReadyForQueueEvent evt, CancellationToken cancellationToken = default);
+    Task NotifyOrderUpdatedAsync(Guid tenantId, Guid orderId, CancellationToken cancellationToken = default);
 }

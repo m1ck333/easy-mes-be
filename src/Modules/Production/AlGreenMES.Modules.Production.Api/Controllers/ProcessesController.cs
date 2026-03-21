@@ -1,3 +1,4 @@
+using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using AlGreenMES.Modules.Production.Api.Requests;
 using AlGreenMES.Modules.Production.Application.Commands.ActivateProcess;
 using AlGreenMES.Modules.Production.Application.Commands.AddSubProcess;
@@ -22,10 +23,14 @@ namespace AlGreenMES.Modules.Production.Api.Controllers;
 public class ProcessesController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITenantService _tenantService;
+    private readonly IProcessChangeNotifier _processChangeNotifier;
 
-    public ProcessesController(IMediator mediator)
+    public ProcessesController(IMediator mediator, ITenantService tenantService, IProcessChangeNotifier processChangeNotifier)
     {
         _mediator = mediator;
+        _tenantService = tenantService;
+        _processChangeNotifier = processChangeNotifier;
     }
 
     [HttpGet]
@@ -68,6 +73,7 @@ public class ProcessesController : ControllerBase
                 request.TenantId, request.Code, request.Name, request.SequenceOrder, null,
                 request.SubProcesses?.Select(s => new CreateProcessSubProcessItem(s.Name, s.SequenceOrder)).ToList()),
             cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return CreatedAtAction(nameof(GetProcessById), new { id = result.Id }, result);
     }
 
@@ -81,6 +87,7 @@ public class ProcessesController : ControllerBase
                 request.AddSubProcesses?.Select(s => new UpdateProcessSubProcessAdd(s.Name, s.SequenceOrder)).ToList(),
                 request.DeactivateSubProcessIds),
             cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return Ok(result);
     }
 
@@ -91,6 +98,7 @@ public class ProcessesController : ControllerBase
         await _mediator.Send(new ReorderProcessesCommand(
             request.Items.Select(i => new Application.Commands.ReorderProcesses.ReorderProcessesItem(i.Id, i.SequenceOrder)).ToList()),
             cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return NoContent();
     }
 
@@ -99,6 +107,7 @@ public class ProcessesController : ControllerBase
     public async Task<IActionResult> DeactivateProcess(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeactivateProcessCommand(id), cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return NoContent();
     }
 
@@ -107,6 +116,7 @@ public class ProcessesController : ControllerBase
     public async Task<IActionResult> ActivateProcess(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new ActivateProcessCommand(id), cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return NoContent();
     }
 
@@ -117,6 +127,7 @@ public class ProcessesController : ControllerBase
         var result = await _mediator.Send(
             new AddSubProcessCommand(processId, request.Name, request.SequenceOrder),
             cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return CreatedAtAction(nameof(GetProcessById), new { id = processId }, result);
     }
 
@@ -127,6 +138,7 @@ public class ProcessesController : ControllerBase
         var result = await _mediator.Send(
             new UpdateSubProcessCommand(processId, subProcessId, request.Name, request.SequenceOrder),
             cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return Ok(result);
     }
 
@@ -138,6 +150,7 @@ public class ProcessesController : ControllerBase
             processId,
             request.Items.Select(i => new Application.Commands.ReorderSubProcesses.ReorderSubProcessesItem(i.Id, i.SequenceOrder)).ToList()),
             cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return NoContent();
     }
 
@@ -146,6 +159,14 @@ public class ProcessesController : ControllerBase
     public async Task<IActionResult> DeactivateSubProcess(Guid processId, Guid subProcessId, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeactivateSubProcessCommand(processId, subProcessId), cancellationToken);
+        await NotifyChangeAsync(cancellationToken);
         return NoContent();
+    }
+
+    private Task NotifyChangeAsync(CancellationToken cancellationToken)
+    {
+        var tenantId = _tenantService.GetCurrentTenantId();
+        if (tenantId == Guid.Empty) return Task.CompletedTask;
+        return _processChangeNotifier.NotifyProcessDefinitionChangedAsync(tenantId, cancellationToken);
     }
 }

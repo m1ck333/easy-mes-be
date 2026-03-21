@@ -7,6 +7,8 @@ using AlGreenMES.Modules.Identity.Application.Commands.UpdateUser;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUserById;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUsers;
 using AlGreenMES.Modules.Identity.Domain.Entities;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -113,6 +115,10 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
     {
+        var currentUserId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        if (currentUserId != null && Guid.Parse(currentUserId) == id)
+            return BadRequest(new { error = new { code = "CANNOT_DELETE_SELF", message = "You cannot delete your own account" } });
+
         await _mediator.Send(new DeleteUserCommand(id), cancellationToken);
         return NoContent();
     }

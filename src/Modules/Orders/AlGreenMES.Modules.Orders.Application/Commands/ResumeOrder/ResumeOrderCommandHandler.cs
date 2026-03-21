@@ -9,11 +9,13 @@ public class ResumeOrderCommandHandler : IRequestHandler<ResumeOrderCommand, Uni
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
+    private readonly IProductionEventService _eventService;
 
-    public ResumeOrderCommandHandler(IOrderRepository orderRepository, IOrdersUnitOfWork unitOfWork)
+    public ResumeOrderCommandHandler(IOrderRepository orderRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
+        _eventService = eventService;
     }
 
     public async Task<Unit> Handle(ResumeOrderCommand request, CancellationToken cancellationToken)
@@ -23,6 +25,7 @@ public class ResumeOrderCommandHandler : IRequestHandler<ResumeOrderCommand, Uni
 
         order.Resume();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _eventService.NotifyOrderUpdatedAsync(order.TenantId, order.Id, cancellationToken);
 
         return Unit.Value;
     }
