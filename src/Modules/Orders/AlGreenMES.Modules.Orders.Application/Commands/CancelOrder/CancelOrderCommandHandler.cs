@@ -21,7 +21,7 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Uni
 
     public async Task<Unit> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
     {
-        var order = await _orderRepository.GetByIdAsync(request.Id, cancellationToken)
+        var order = await _orderRepository.GetByIdWithFullDetailsAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Order", request.Id);
 
         order.Cancel();

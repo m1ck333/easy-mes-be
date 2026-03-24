@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Production.Application.Commands.ActivateProcess;
 using AlGreenMES.Modules.Production.Application.Commands.AddSubProcess;
 using AlGreenMES.Modules.Production.Application.Commands.CreateProcess;
 using AlGreenMES.Modules.Production.Application.Commands.DeactivateProcess;
+using AlGreenMES.Modules.Production.Application.Commands.DeleteProcess;
 using AlGreenMES.Modules.Production.Application.Commands.DeactivateSubProcess;
 using AlGreenMES.Modules.Production.Application.Commands.ReorderProcesses;
 using AlGreenMES.Modules.Production.Application.Commands.ReorderSubProcesses;
@@ -42,6 +43,8 @@ public class ProcessesController : ControllerBase
         [FromQuery] string? search = null,
         [FromQuery] DateTime? createdFrom = null,
         [FromQuery] DateTime? createdTo = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDirection = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetProcessesQuery
@@ -52,7 +55,9 @@ public class ProcessesController : ControllerBase
             PageSize = pageSize,
             Search = search,
             CreatedFrom = createdFrom,
-            CreatedTo = createdTo
+            CreatedTo = createdTo,
+            SortBy = sortBy,
+            SortDirection = sortDirection
         }, cancellationToken);
         return Ok(result);
     }
@@ -104,10 +109,12 @@ public class ProcessesController : ControllerBase
 
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeactivateProcess(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteProcess(Guid id, [FromQuery] bool forceDeactivate = false, [FromQuery] bool forceDelete = false, CancellationToken cancellationToken = default)
     {
-        await _mediator.Send(new DeactivateProcessCommand(id), cancellationToken);
+        var result = await _mediator.Send(new DeleteProcessCommand(id, forceDeactivate, forceDelete), cancellationToken);
         await NotifyChangeAsync(cancellationToken);
+        if (!result.HardDeleted && !result.Deactivated)
+            return Ok(new { hasReferences = true, referencedOrderCount = result.ReferencedOrderCount });
         return NoContent();
     }
 

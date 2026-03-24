@@ -46,6 +46,11 @@ public class ProductCategoryRepository : IProductCategoryRepository
         await _dbContext.ProductCategories.AddAsync(category, cancellationToken);
     }
 
+    public void Remove(ProductCategory category)
+    {
+        _dbContext.ProductCategories.Remove(category);
+    }
+
     public async Task<bool> ExistsByNameAsync(string name, Guid tenantId, CancellationToken cancellationToken = default)
     {
         var normalizedName = name.Trim();
@@ -53,7 +58,7 @@ public class ProductCategoryRepository : IProductCategoryRepository
             .AnyAsync(c => c.Name == normalizedName && c.TenantId == tenantId, cancellationToken);
     }
 
-    public async Task<PagedResult<ProductCategory>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ProductCategory>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.ProductCategories.Where(pc => pc.TenantId == tenantId);
 
@@ -74,8 +79,17 @@ public class ProductCategoryRepository : IProductCategoryRepository
             query = query.Where(x => x.CreatedAt < to);
         }
 
-        query = query.OrderBy(pc => pc.Name);
+        IOrderedQueryable<ProductCategory> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "createdat":
+                sorted = isDescending ? query.OrderByDescending(pc => pc.CreatedAt) : query.OrderBy(pc => pc.CreatedAt);
+                break;
+            default: // name asc
+                sorted = isDescending ? query.OrderByDescending(pc => pc.Name) : query.OrderBy(pc => pc.Name);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

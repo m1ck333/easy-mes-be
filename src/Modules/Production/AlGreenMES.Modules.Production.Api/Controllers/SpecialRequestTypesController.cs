@@ -31,6 +31,8 @@ public class SpecialRequestTypesController : ControllerBase
         [FromQuery] string? search = null,
         [FromQuery] DateTime? createdFrom = null,
         [FromQuery] DateTime? createdTo = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDirection = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetSpecialRequestTypesQuery
@@ -41,7 +43,9 @@ public class SpecialRequestTypesController : ControllerBase
             PageSize = pageSize,
             Search = search,
             CreatedFrom = createdFrom,
-            CreatedTo = createdTo
+            CreatedTo = createdTo,
+            SortBy = sortBy,
+            SortDirection = sortDirection
         }, cancellationToken);
         return Ok(result);
     }

@@ -3,6 +3,7 @@ using AlGreenMES.Modules.Orders.Application.DTOs;
 using AlGreenMES.Modules.Orders.Domain.Entities;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
+using AlGreenMES.Modules.Production.Domain.Repositories;
 using MediatR;
 
 namespace AlGreenMES.Modules.Orders.Application.Queries.GetOrdersMasterView;
@@ -10,10 +11,12 @@ namespace AlGreenMES.Modules.Orders.Application.Queries.GetOrdersMasterView;
 public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterViewQuery, PagedResult<OrderMasterViewDto>>
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IProductCategoryRepository _categoryRepository;
 
-    public GetOrdersMasterViewQueryHandler(IOrderRepository orderRepository)
+    public GetOrdersMasterViewQueryHandler(IOrderRepository orderRepository, IProductCategoryRepository categoryRepository)
     {
         _orderRepository = orderRepository;
+        _categoryRepository = categoryRepository;
     }
 
     public async Task<PagedResult<OrderMasterViewDto>> Handle(GetOrdersMasterViewQuery request, CancellationToken cancellationToken)
@@ -21,12 +24,30 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
         var result = await _orderRepository.GetPagedWithProcessesAsync(
             request.TenantId, request.Status, request.OrderType,
             request.DateFrom, request.DateTo, request.Search,
+            request.SortBy, request.IsDescending,
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
-        return result.MapItems(MapToMasterView);
+        // Pre-load category dependencies for all categories in the result set
+        var categoryIds = result.Items
+            .SelectMany(o => o.Items.Select(i => i.ProductCategoryId))
+            .Distinct()
+            .ToList();
+        var categoryDeps = new Dictionary<Guid, List<(Guid ProcessId, Guid DependsOnProcessId)>>();
+        foreach (var catId in categoryIds)
+        {
+            var cat = await _categoryRepository.GetByIdWithDetailsAsync(catId, cancellationToken);
+            if (cat?.Dependencies != null)
+            {
+                categoryDeps[catId] = cat.Dependencies
+                    .Select(d => (d.ProcessId, d.DependsOnProcessId))
+                    .ToList();
+            }
+        }
+
+        return result.MapItems(o => MapToMasterView(o, categoryDeps));
     }
 
-    private static OrderMasterViewDto MapToMasterView(Order order)
+    private static OrderMasterViewDto MapToMasterView(Order order, Dictionary<Guid, List<(Guid ProcessId, Guid DependsOnProcessId)>> categoryDeps)
     {
         var allProcesses = order.Items.SelectMany(i => i.Processes).ToList();
         var nonWithdrawn = allProcesses.Where(p => !p.IsWithdrawn).ToList();
@@ -40,6 +61,24 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
         var processDurations = grouped.ToDictionary(
             g => g.Key.ToString(),
             g => g.Sum(p => p.TotalDurationMinutes));
+
+        // Build process dependencies from all items' categories
+        var processDependencies = new Dictionary<string, List<string>>();
+        foreach (var item in order.Items)
+        {
+            if (categoryDeps.TryGetValue(item.ProductCategoryId, out var deps))
+            {
+                foreach (var dep in deps)
+                {
+                    var key = dep.ProcessId.ToString();
+                    if (!processDependencies.ContainsKey(key))
+                        processDependencies[key] = new List<string>();
+                    var depKey = dep.DependsOnProcessId.ToString();
+                    if (!processDependencies[key].Contains(depKey))
+                        processDependencies[key].Add(depKey);
+                }
+            }
+        }
 
         var completedProcesses = nonWithdrawn.Count(p => p.Status == ProcessStatus.Completed);
         var totalProcesses = nonWithdrawn.Count;
@@ -57,6 +96,7 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             totalProcesses,
             processStatuses,
             processDurations,
+            processDependencies,
             order.Attachments.Count,
             order.CreatedAt);
     }

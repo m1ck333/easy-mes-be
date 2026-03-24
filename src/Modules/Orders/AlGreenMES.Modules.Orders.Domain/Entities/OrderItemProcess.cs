@@ -156,6 +156,26 @@ public class OrderItemProcess : TenantEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void Restart(bool resetTime)
+    {
+        if (Status != ProcessStatus.Completed)
+            throw new DomainException("INVALID_STATUS", "Can only restart completed processes.");
+
+        Status = ProcessStatus.InProgress;
+        CompletedAt = null;
+        PausedAt = null;
+        ResumedAt = DateTime.UtcNow;
+
+        if (resetTime)
+        {
+            TotalDurationMinutes = 0;
+            StartedAt = DateTime.UtcNow;
+            ResumedAt = null;
+        }
+
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void AddDuration(int minutes)
     {
         TotalDurationMinutes += minutes;

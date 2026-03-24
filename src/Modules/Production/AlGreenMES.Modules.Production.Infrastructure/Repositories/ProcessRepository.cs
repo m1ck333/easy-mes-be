@@ -42,6 +42,11 @@ public class ProcessRepository : IProcessRepository
         await _dbContext.Processes.AddAsync(process, cancellationToken);
     }
 
+    public void Remove(Process process)
+    {
+        _dbContext.Processes.Remove(process);
+    }
+
     public async Task<bool> ExistsByCodeAsync(string code, Guid tenantId, Guid? excludeId = null, CancellationToken cancellationToken = default)
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
@@ -51,7 +56,7 @@ public class ProcessRepository : IProcessRepository
         return await query.AnyAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<Process>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Process>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Processes
             .Include(p => p.SubProcesses)
@@ -77,9 +82,24 @@ public class ProcessRepository : IProcessRepository
             query = query.Where(x => x.CreatedAt < to);
         }
 
-        query = query.OrderBy(p => p.SequenceOrder);
+        IOrderedQueryable<Process> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "code":
+                sorted = isDescending ? query.OrderByDescending(p => p.Code) : query.OrderBy(p => p.Code);
+                break;
+            case "name":
+                sorted = isDescending ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name);
+                break;
+            case "createdat":
+                sorted = isDescending ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt);
+                break;
+            default: // sequenceOrder asc
+                sorted = isDescending ? query.OrderByDescending(p => p.SequenceOrder) : query.OrderBy(p => p.SequenceOrder);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 
     public async Task<IReadOnlyList<Process>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)

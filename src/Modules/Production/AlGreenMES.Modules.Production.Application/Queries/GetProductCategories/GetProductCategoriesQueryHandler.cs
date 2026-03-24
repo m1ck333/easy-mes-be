@@ -20,6 +20,7 @@ public class GetProductCategoriesQueryHandler : IRequestHandler<GetProductCatego
         var result = await _categoryRepository.GetPagedAsync(
             request.TenantId, request.IsActive, request.Search,
             request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
+            request.SortBy, request.IsDescending,
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
         return result.MapItems(c => c.Adapt<ProductCategoryDto>());

@@ -41,7 +41,7 @@ public class SpecialRequestTypeRepository : ISpecialRequestTypeRepository
             .AnyAsync(s => s.Code == normalizedCode && s.TenantId == tenantId, cancellationToken);
     }
 
-    public async Task<PagedResult<SpecialRequestType>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<SpecialRequestType>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.SpecialRequestTypes.Where(srt => srt.TenantId == tenantId);
 
@@ -65,8 +65,20 @@ public class SpecialRequestTypeRepository : ISpecialRequestTypeRepository
             query = query.Where(x => x.CreatedAt < to);
         }
 
-        query = query.OrderBy(srt => srt.Code);
+        IOrderedQueryable<SpecialRequestType> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "name":
+                sorted = isDescending ? query.OrderByDescending(srt => srt.Name) : query.OrderBy(srt => srt.Name);
+                break;
+            case "createdat":
+                sorted = isDescending ? query.OrderByDescending(srt => srt.CreatedAt) : query.OrderBy(srt => srt.CreatedAt);
+                break;
+            default: // code asc
+                sorted = isDescending ? query.OrderByDescending(srt => srt.Code) : query.OrderBy(srt => srt.Code);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

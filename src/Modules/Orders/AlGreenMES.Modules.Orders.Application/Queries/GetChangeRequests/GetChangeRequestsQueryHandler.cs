@@ -20,6 +20,7 @@ public class GetChangeRequestsQueryHandler : IRequestHandler<GetChangeRequestsQu
         var result = await _changeRequestRepository.GetPagedAsync(
             request.TenantId, request.Status, request.RequestType, request.Search,
             request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
+            request.SortBy, request.IsDescending,
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
         return result.MapItems(c =>

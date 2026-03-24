@@ -6,6 +6,7 @@ using AlGreenMES.Modules.Orders.Application.Commands.ResumeProcessWork;
 using AlGreenMES.Modules.Orders.Application.Commands.ResumeStation;
 using AlGreenMES.Modules.Orders.Application.Commands.StartProcessWork;
 using AlGreenMES.Modules.Orders.Application.Commands.StopProcessWork;
+using AlGreenMES.Modules.Orders.Application.Commands.RestartProcess;
 using AlGreenMES.Modules.Orders.Application.Commands.UnblockProcess;
 using AlGreenMES.Modules.Orders.Application.Commands.WithdrawProcess;
 using MediatR;
@@ -45,6 +46,14 @@ public class ProcessWorkflowController : ControllerBase
     public async Task<IActionResult> CompleteProcess(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new CompleteProcessCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/restart")]
+    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    public async Task<IActionResult> RestartProcess(Guid id, [FromBody] RestartProcessRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new RestartProcessCommand(id, request.ResetTime), cancellationToken);
         return NoContent();
     }
 

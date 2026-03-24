@@ -20,6 +20,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<U
         var result = await _userRepository.GetPagedAsync(
             request.TenantId, request.Role, request.IsActive, request.Search,
             request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
+            request.SortBy, request.IsDescending,
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
         return result.MapItems(u => u.Adapt<UserDto>());

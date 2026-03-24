@@ -48,7 +48,7 @@ public class ChangeRequestRepository : IChangeRequestRepository
         await _dbContext.ChangeRequests.AddAsync(request, cancellationToken);
     }
 
-    public async Task<PagedResult<ChangeRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, ChangeRequestType? requestType, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ChangeRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, ChangeRequestType? requestType, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.ChangeRequests
             .Include(cr => cr.Order)
@@ -74,9 +74,21 @@ public class ChangeRequestRepository : IChangeRequestRepository
             query = query.Where(x => x.CreatedAt < to);
         }
 
-        query = query.OrderByDescending(cr => cr.CreatedAt);
+        IOrderedQueryable<ChangeRequest> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "description":
+                sorted = isDescending ? query.OrderByDescending(cr => cr.Description) : query.OrderBy(cr => cr.Description);
+                break;
+            case "updatedat":
+                sorted = isDescending ? query.OrderByDescending(cr => cr.UpdatedAt) : query.OrderBy(cr => cr.UpdatedAt);
+                break;
+            default: // createdAt desc
+                sorted = isDescending ? query.OrderByDescending(cr => cr.CreatedAt) : query.OrderBy(cr => cr.CreatedAt);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 
     public async Task<PagedResult<ChangeRequest>> GetPagedByUserAsync(Guid tenantId, Guid userId, RequestStatus? status, string? search, int page, int pageSize, CancellationToken cancellationToken = default)

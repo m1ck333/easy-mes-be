@@ -123,7 +123,7 @@ public class OrderRepository : IOrderRepository
         return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 
-    public async Task<PagedResult<Order>> GetPagedWithProcessesAsync(Guid tenantId, OrderStatus? status, OrderType? orderType, DateTime? dateFrom, DateTime? dateTo, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Order>> GetPagedWithProcessesAsync(Guid tenantId, OrderStatus? status, OrderType? orderType, DateTime? dateFrom, DateTime? dateTo, string? search, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Orders
             .Include(o => o.Items)
@@ -152,12 +152,45 @@ public class OrderRepository : IOrderRepository
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(o => o.OrderNumber.Contains(search));
 
-        query = query
-            .OrderBy(o => o.Status == OrderStatus.Completed ? 1 : 0)
-            .ThenBy(o => o.Status == OrderStatus.Cancelled ? 1 : 0)
-            .ThenBy(o => o.Priority)
-            .ThenBy(o => o.DeliveryDate);
+        // Dynamic sorting
+        IOrderedQueryable<Order> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "ordernumber":
+                sorted = isDescending ? query.OrderByDescending(o => o.OrderNumber) : query.OrderBy(o => o.OrderNumber);
+                break;
+            case "ordertype":
+                sorted = isDescending ? query.OrderByDescending(o => o.OrderType) : query.OrderBy(o => o.OrderType);
+                break;
+            case "status":
+                // Active=0, Paused=1, Draft=2, Cancelled=3, Completed=4
+                if (isDescending)
+                    sorted = query.OrderByDescending(o =>
+                        o.Status == OrderStatus.Active ? 0 :
+                        o.Status == OrderStatus.Paused ? 1 :
+                        o.Status == OrderStatus.Cancelled ? 3 :
+                        o.Status == OrderStatus.Completed ? 4 : 2);
+                else
+                    sorted = query.OrderBy(o =>
+                        o.Status == OrderStatus.Active ? 0 :
+                        o.Status == OrderStatus.Paused ? 1 :
+                        o.Status == OrderStatus.Cancelled ? 3 :
+                        o.Status == OrderStatus.Completed ? 4 : 2);
+                break;
+            case "createdat":
+                sorted = isDescending ? query.OrderByDescending(o => o.CreatedAt) : query.OrderBy(o => o.CreatedAt);
+                break;
+            case "deliverydate":
+                sorted = isDescending ? query.OrderByDescending(o => o.DeliveryDate) : query.OrderBy(o => o.DeliveryDate);
+                break;
+            default: // priority (default)
+                sorted = query
+                    .OrderBy(o => o.Status == OrderStatus.Completed ? 1 : 0)
+                    .ThenBy(o => o.Status == OrderStatus.Cancelled ? 1 : 0);
+                sorted = isDescending ? sorted.ThenByDescending(o => o.Priority) : sorted.ThenBy(o => o.Priority);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

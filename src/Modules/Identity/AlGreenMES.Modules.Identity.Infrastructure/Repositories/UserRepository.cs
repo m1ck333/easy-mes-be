@@ -88,7 +88,7 @@ public class UserRepository : IUserRepository
         _dbContext.Users.Remove(user);
     }
 
-    public async Task<PagedResult<User>> GetPagedAsync(Guid tenantId, UserRole? role, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<User>> GetPagedAsync(Guid tenantId, UserRole? role, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Users.Include(u => u.UserProcesses).Where(u => u.TenantId == tenantId);
 
@@ -115,8 +115,22 @@ public class UserRepository : IUserRepository
             query = query.Where(x => x.CreatedAt < to);
         }
 
-        query = query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName);
+        IOrderedQueryable<User> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "email":
+                sorted = isDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email);
+                break;
+            case "createdat":
+                sorted = isDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt);
+                break;
+            default: // lastName asc, firstName asc
+                sorted = isDescending
+                    ? query.OrderByDescending(u => u.LastName).ThenByDescending(u => u.FirstName)
+                    : query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

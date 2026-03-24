@@ -20,6 +20,7 @@ public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, PagedResu
         var result = await _tenantRepository.GetPagedAsync(
             request.IsActive, request.Search,
             request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
+            request.SortBy, request.IsDescending,
             request.GetPage(), request.GetPageSize(), cancellationToken);
 
         return result.MapItems(t => t.Adapt<TenantDto>());

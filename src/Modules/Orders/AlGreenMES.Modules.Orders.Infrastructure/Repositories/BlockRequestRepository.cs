@@ -40,7 +40,7 @@ public class BlockRequestRepository : IBlockRequestRepository
         await _dbContext.BlockRequests.AddAsync(request, cancellationToken);
     }
 
-    public async Task<PagedResult<BlockRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<BlockRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.BlockRequests
             .Include(br => br.OrderItemProcess)
@@ -65,8 +65,23 @@ public class BlockRequestRepository : IBlockRequestRepository
             query = query.Where(x => x.CreatedAt < to);
         }
 
-        query = query.OrderByDescending(br => br.CreatedAt);
+        IOrderedQueryable<BlockRequest> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "status":
+                sorted = isDescending ? query.OrderByDescending(br => br.Status) : query.OrderBy(br => br.Status);
+                break;
+            case "requestnote":
+                sorted = isDescending ? query.OrderByDescending(br => br.RequestNote) : query.OrderBy(br => br.RequestNote);
+                break;
+            case "updatedat":
+                sorted = isDescending ? query.OrderByDescending(br => br.UpdatedAt) : query.OrderBy(br => br.UpdatedAt);
+                break;
+            default: // createdAt desc
+                sorted = isDescending ? query.OrderByDescending(br => br.CreatedAt) : query.OrderBy(br => br.CreatedAt);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

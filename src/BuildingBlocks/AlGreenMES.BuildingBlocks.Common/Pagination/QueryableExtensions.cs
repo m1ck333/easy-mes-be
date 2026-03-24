@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 namespace AlGreenMES.BuildingBlocks.Common.Pagination;
@@ -21,5 +22,17 @@ public static class QueryableExtensions
             .ToListAsync(cancellationToken);
 
         return PagedResult<T>.Create(items, totalCount, safePage, safePageSize);
+    }
+
+    public static IOrderedQueryable<T> ApplySort<T, TKey>(
+        this IQueryable<T> query,
+        string? sortBy,
+        string targetField,
+        bool isDescending,
+        Expression<Func<T, TKey>> keySelector)
+    {
+        if (string.Equals(sortBy, targetField, StringComparison.OrdinalIgnoreCase))
+            return isDescending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
+        return (IOrderedQueryable<T>)query;
     }
 }

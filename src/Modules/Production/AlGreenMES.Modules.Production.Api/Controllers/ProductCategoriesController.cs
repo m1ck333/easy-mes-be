@@ -4,6 +4,7 @@ using AlGreenMES.Modules.Production.Application.Commands.AddCategoryDependency;
 using AlGreenMES.Modules.Production.Application.Commands.AddCategoryProcess;
 using AlGreenMES.Modules.Production.Application.Commands.CreateProductCategory;
 using AlGreenMES.Modules.Production.Application.Commands.DeactivateProductCategory;
+using AlGreenMES.Modules.Production.Application.Commands.DeleteProductCategory;
 using AlGreenMES.Modules.Production.Application.Commands.RemoveCategoryDependency;
 using AlGreenMES.Modules.Production.Application.Commands.RemoveCategoryProcess;
 using AlGreenMES.Modules.Production.Application.Commands.UpdateProductCategory;
@@ -36,6 +37,8 @@ public class ProductCategoriesController : ControllerBase
         [FromQuery] string? search = null,
         [FromQuery] DateTime? createdFrom = null,
         [FromQuery] DateTime? createdTo = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDirection = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetProductCategoriesQuery
@@ -46,7 +49,9 @@ public class ProductCategoriesController : ControllerBase
             PageSize = pageSize,
             Search = search,
             CreatedFrom = createdFrom,
-            CreatedTo = createdTo
+            CreatedTo = createdTo,
+            SortBy = sortBy,
+            SortDirection = sortDirection
         }, cancellationToken);
         return Ok(result);
     }
@@ -88,9 +93,11 @@ public class ProductCategoriesController : ControllerBase
 
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeactivateProductCategory(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteProductCategory(Guid id, [FromQuery] bool forceDeactivate = false, [FromQuery] bool forceDelete = false, CancellationToken cancellationToken = default)
     {
-        await _mediator.Send(new DeactivateProductCategoryCommand(id), cancellationToken);
+        var result = await _mediator.Send(new DeleteProductCategoryCommand(id, forceDeactivate, forceDelete), cancellationToken);
+        if (!result.HardDeleted && !result.Deactivated)
+            return Ok(new { hasReferences = true, referencedOrderCount = result.ReferencedOrderCount });
         return NoContent();
     }
 

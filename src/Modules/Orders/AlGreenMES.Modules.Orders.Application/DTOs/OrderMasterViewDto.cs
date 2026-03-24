@@ -15,5 +15,7 @@ public record OrderMasterViewDto(
     int TotalProcesses,
     Dictionary<string, string> ProcessStatuses,
     Dictionary<string, int> ProcessDurations,
+    /// <summary>Map of processId → list of processIds it depends on</summary>
+    Dictionary<string, List<string>> ProcessDependencies,
     int AttachmentCount,
     DateTime CreatedAt);

@@ -50,7 +50,7 @@ public class TenantRepository : ITenantRepository
             .AnyAsync(t => t.Code == normalizedCode, cancellationToken);
     }
 
-    public async Task<PagedResult<Tenant>> GetPagedAsync(bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Tenant>> GetPagedAsync(bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Tenants.AsQueryable();
 
@@ -74,8 +74,20 @@ public class TenantRepository : ITenantRepository
             query = query.Where(x => x.CreatedAt < to);
         }
 
-        query = query.OrderBy(t => t.Name);
+        IOrderedQueryable<Tenant> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "code":
+                sorted = isDescending ? query.OrderByDescending(t => t.Code) : query.OrderBy(t => t.Code);
+                break;
+            case "createdat":
+                sorted = isDescending ? query.OrderByDescending(t => t.CreatedAt) : query.OrderBy(t => t.CreatedAt);
+                break;
+            default: // name asc
+                sorted = isDescending ? query.OrderByDescending(t => t.Name) : query.OrderBy(t => t.Name);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }

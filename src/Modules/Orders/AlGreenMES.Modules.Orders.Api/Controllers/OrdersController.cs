@@ -83,6 +83,8 @@ public class OrdersController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDirection = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetOrdersMasterViewQuery
@@ -94,7 +96,9 @@ public class OrdersController : ControllerBase
             DateTo = dateTo,
             Page = page,
             PageSize = pageSize,
-            Search = search
+            Search = search,
+            SortBy = sortBy,
+            SortDirection = sortDirection,
         }, cancellationToken);
         return Ok(result);
     }

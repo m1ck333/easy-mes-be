@@ -34,7 +34,7 @@ public class ShiftRepository : IShiftRepository
         await _dbContext.Shifts.AddAsync(shift, cancellationToken);
     }
 
-    public async Task<PagedResult<Shift>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Shift>> GetPagedAsync(Guid tenantId, bool? isActive, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Shifts.Where(s => s.TenantId == tenantId);
 
@@ -55,8 +55,23 @@ public class ShiftRepository : IShiftRepository
             query = query.Where(x => x.CreatedAt < to);
         }
 
-        query = query.OrderBy(s => s.Name);
+        IOrderedQueryable<Shift> sorted;
+        switch (sortBy?.ToLowerInvariant())
+        {
+            case "starttime":
+                sorted = isDescending ? query.OrderByDescending(s => s.StartTime) : query.OrderBy(s => s.StartTime);
+                break;
+            case "endtime":
+                sorted = isDescending ? query.OrderByDescending(s => s.EndTime) : query.OrderBy(s => s.EndTime);
+                break;
+            case "createdat":
+                sorted = isDescending ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt);
+                break;
+            default: // name asc
+                sorted = isDescending ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name);
+                break;
+        }
 
-        return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 }
