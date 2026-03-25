@@ -78,6 +78,13 @@ public class OrderItemSubProcess : TenantEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void ResetDuration()
+    {
+        TotalDurationMinutes = 0;
+        Status = SubProcessStatus.Pending;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public OrderItemSubProcessLog StartLog(Guid userId)
     {
         var openLog = _logs.FirstOrDefault(l => l.EndTime == null);

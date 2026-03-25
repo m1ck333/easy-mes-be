@@ -9,12 +9,14 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.UnblockProcess;
 public class UnblockProcessCommandHandler : IRequestHandler<UnblockProcessCommand, Unit>
 {
     private readonly IOrderItemProcessRepository _orderItemProcessRepository;
+    private readonly IBlockRequestRepository _blockRequestRepository;
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IProductionEventService _eventService;
 
-    public UnblockProcessCommandHandler(IOrderItemProcessRepository orderItemProcessRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
+    public UnblockProcessCommandHandler(IOrderItemProcessRepository orderItemProcessRepository, IBlockRequestRepository blockRequestRepository, IOrdersUnitOfWork unitOfWork, IProductionEventService eventService)
     {
         _orderItemProcessRepository = orderItemProcessRepository;
+        _blockRequestRepository = blockRequestRepository;
         _unitOfWork = unitOfWork;
         _eventService = eventService;
     }
@@ -25,7 +27,8 @@ public class UnblockProcessCommandHandler : IRequestHandler<UnblockProcessComman
         if (process == null)
             throw new NotFoundException("OrderItemProcess", request.OrderItemProcessId);
 
-        process.Unblock(request.UserId);
+        process.Unblock(request.UserId, request.ResetTime);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await _eventService.NotifyProcessUnblockedAsync(

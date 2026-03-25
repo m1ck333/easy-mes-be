@@ -21,8 +21,23 @@ public class ActivateOrderCommandHandler : IRequestHandler<ActivateOrderCommand,
 
     public async Task<Unit> Handle(ActivateOrderCommand request, CancellationToken cancellationToken)
     {
-        var order = await _orderRepository.GetByIdWithItemsAsync(request.Id, cancellationToken)
+        var order = await _orderRepository.GetByIdWithFullDetailsAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Order", request.Id);
+
+        // Reset timers for selected processes before activating
+        if (request.ResetProcessIds is { Count: > 0 })
+        {
+            foreach (var item in order.Items)
+            {
+                foreach (var proc in item.Processes)
+                {
+                    if (request.ResetProcessIds.Contains(proc.Id))
+                    {
+                        proc.ResetTimer();
+                    }
+                }
+            }
+        }
 
         order.Activate();
         await _unitOfWork.SaveChangesAsync(cancellationToken);

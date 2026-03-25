@@ -147,9 +147,9 @@ public class OrdersController : ControllerBase
 
     [HttpPost("{id:guid}/activate")]
     [Authorize(Roles = "Admin,Manager,Coordinator")]
-    public async Task<IActionResult> ActivateOrder(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> ActivateOrder(Guid id, [FromBody] ActivateOrderRequest? request = null, CancellationToken cancellationToken = default)
     {
-        await _mediator.Send(new ActivateOrderCommand(id), cancellationToken);
+        await _mediator.Send(new ActivateOrderCommand(id, request?.ResetProcessIds), cancellationToken);
         return NoContent();
     }
 

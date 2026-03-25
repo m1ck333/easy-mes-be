@@ -13,5 +13,7 @@ public record OrderItemProcessDto(
     DateTime? StartedAt,
     DateTime? CompletedAt,
     int TotalDurationMinutes,
+    DateTime? PausedAt,
+    DateTime? ResumedAt,
     bool IsWithdrawn,
     List<OrderItemSubProcessDto> SubProcesses);

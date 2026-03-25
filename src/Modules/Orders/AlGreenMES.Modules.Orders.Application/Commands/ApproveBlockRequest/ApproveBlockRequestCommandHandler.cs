@@ -40,7 +40,7 @@ public class ApproveBlockRequestCommandHandler : IRequestHandler<ApproveBlockReq
         if (blockRequest.OrderItemProcessId.HasValue)
         {
             var process = await _processRepository.GetByIdWithFullDetailsAsync(blockRequest.OrderItemProcessId.Value, cancellationToken);
-            if (process != null && process.Status == ProcessStatus.InProgress)
+            if (process != null && (process.Status == ProcessStatus.InProgress || process.Status == ProcessStatus.Pending))
             {
                 // End any open time log before blocking
                 var activeSub = process.SubProcesses

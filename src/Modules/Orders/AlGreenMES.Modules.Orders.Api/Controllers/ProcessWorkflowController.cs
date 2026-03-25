@@ -38,7 +38,7 @@ public class ProcessWorkflowController : ControllerBase
     [Authorize(Roles = "Admin,Manager,Coordinator")]
     public async Task<IActionResult> UnblockProcess(Guid id, [FromBody] UnblockProcessRequest request, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UnblockProcessCommand(id, request.UserId), cancellationToken);
+        await _mediator.Send(new UnblockProcessCommand(id, request.UserId, request.ResetTime), cancellationToken);
         return NoContent();
     }
 

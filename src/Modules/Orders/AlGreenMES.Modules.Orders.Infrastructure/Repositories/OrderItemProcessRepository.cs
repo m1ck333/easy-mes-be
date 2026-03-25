@@ -31,6 +31,7 @@ public class OrderItemProcessRepository : IOrderItemProcessRepository
     {
         return await _dbContext.OrderItemProcesses
             .Include(p => p.SubProcesses)
+                .ThenInclude(sp => sp.Logs)
             .Include(p => p.OrderItem)
                 .ThenInclude(oi => oi.Order)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);

@@ -65,7 +65,7 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Ord
                     var process = await _processRepository.GetByIdWithSubProcessesAsync(catProcess.ProcessId, cancellationToken);
                     if (process?.SubProcesses != null)
                     {
-                        foreach (var sub in process.SubProcesses.OrderBy(s => s.SequenceOrder))
+                        foreach (var sub in process.SubProcesses.Where(s => s.IsActive).OrderBy(s => s.SequenceOrder))
                         {
                             oip.AddSubProcess(sub.Id);
                         }

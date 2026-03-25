@@ -8,4 +8,6 @@ public record OrderItemSubProcessDto(
     Guid SubProcessId,
     SubProcessStatus Status,
     int TotalDurationMinutes,
-    bool IsWithdrawn);
+    bool IsWithdrawn,
+    bool IsTimerRunning,
+    DateTime? CurrentLogStartedAt);

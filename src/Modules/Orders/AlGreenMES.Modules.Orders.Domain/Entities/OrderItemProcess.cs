@@ -98,11 +98,42 @@ public class OrderItemProcess : TenantEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void Unblock(Guid userId)
+    public void Unblock(Guid userId, bool resetTime = false)
     {
         if (Status != ProcessStatus.Blocked)
             throw new DomainException("NOT_BLOCKED", "Process is not blocked.");
-        Status = ProcessStatus.Pending;
+
+        if (StartedAt.HasValue)
+        {
+            Status = ProcessStatus.InProgress;
+            if (resetTime)
+            {
+                TotalDurationMinutes = 0;
+                StartedAt = DateTime.UtcNow;
+                ResumedAt = null;
+                PausedAt = null;
+
+                // Reset sub-process timers too
+                foreach (var sub in _subProcesses)
+                {
+                    var openLog = sub.GetOpenLog();
+                    if (openLog != null) openLog.End();
+                    if (sub.Status == Enums.SubProcessStatus.InProgress)
+                        sub.Complete();
+                    sub.ResetDuration();
+                }
+            }
+            else
+            {
+                ResumedAt = DateTime.UtcNow;
+                PausedAt = null;
+            }
+        }
+        else
+        {
+            Status = ProcessStatus.Pending;
+        }
+
         UnblockedAt = DateTime.UtcNow;
         UnblockedByUserId = userId;
         UpdatedAt = DateTime.UtcNow;
@@ -144,6 +175,26 @@ public class OrderItemProcess : TenantEntity
         PausedAt = DateTime.UtcNow;
         ResumedAt = null;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ResetTimer()
+    {
+        TotalDurationMinutes = 0;
+        StartedAt = DateTime.UtcNow;
+        ResumedAt = null;
+        PausedAt = null;
+        UpdatedAt = DateTime.UtcNow;
+
+        // Close open sub-process logs and reset sub-process timers
+        foreach (var sub in _subProcesses)
+        {
+            var openLog = sub.GetOpenLog();
+            if (openLog != null)
+                openLog.End();
+            if (sub.Status == Enums.SubProcessStatus.InProgress)
+                sub.Complete();
+            sub.ResetDuration();
+        }
     }
 
     public void ResumeTimer()

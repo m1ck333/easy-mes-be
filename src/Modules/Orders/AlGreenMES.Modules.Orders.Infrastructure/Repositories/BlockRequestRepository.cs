@@ -84,4 +84,11 @@ public class BlockRequestRepository : IBlockRequestRepository
 
         return await sorted.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<BlockRequest>> GetApprovedByProcessIdAsync(Guid orderItemProcessId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.BlockRequests
+            .Where(br => br.OrderItemProcessId == orderItemProcessId && br.Status == RequestStatus.Approved)
+            .ToListAsync(cancellationToken);
+    }
 }

@@ -60,7 +60,31 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
 
         var processDurations = grouped.ToDictionary(
             g => g.Key.ToString(),
-            g => g.Sum(p => p.TotalDurationMinutes));
+            g => g.Sum(p =>
+            {
+                var hasSubProcesses = p.SubProcesses.Any(sp => !sp.IsWithdrawn);
+                if (hasSubProcesses)
+                {
+                    // Sub-process path: sum sub-process durations + any open log elapsed
+                    return p.SubProcesses.Sum(sp =>
+                    {
+                        var spTime = sp.TotalDurationMinutes;
+                        var openLog = sp.Logs?.FirstOrDefault(l => l.EndTime == null);
+                        if (openLog != null)
+                            spTime += (int)(DateTime.UtcNow - openLog.StartTime).TotalSeconds;
+                        return spTime;
+                    });
+                }
+                // No sub-process path: saved + live elapsed
+                var saved = p.TotalDurationMinutes;
+                if (p.Status == ProcessStatus.InProgress && !p.PausedAt.HasValue)
+                {
+                    var since = p.ResumedAt ?? p.StartedAt;
+                    if (since.HasValue)
+                        saved += (int)(DateTime.UtcNow - since.Value).TotalSeconds;
+                }
+                return saved;
+            }));
 
         // Build process dependencies from all items' categories
         var processDependencies = new Dictionary<string, List<string>>();
@@ -83,6 +107,26 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
         var completedProcesses = nonWithdrawn.Count(p => p.Status == ProcessStatus.Completed);
         var totalProcesses = nonWithdrawn.Count;
 
+        var processPaused = grouped.ToDictionary(
+            g => g.Key.ToString(),
+            g =>
+            {
+                var inProgress = g.Where(p => p.Status == ProcessStatus.InProgress).ToList();
+                if (inProgress.Count == 0) return false;
+                // Paused only if ALL in-progress items for this process are paused
+                return inProgress.All(p =>
+                {
+                    var hasSubs = p.SubProcesses.Any(sp => !sp.IsWithdrawn);
+                    if (hasSubs)
+                    {
+                        var anyRunning = p.SubProcesses.Any(sp => sp.Status == SubProcessStatus.InProgress);
+                        var allDone = p.SubProcesses.Where(sp => !sp.IsWithdrawn).All(sp => sp.Status == SubProcessStatus.Completed);
+                        return !anyRunning && !allDone;
+                    }
+                    return p.PausedAt.HasValue;
+                });
+            });
+
         return new OrderMasterViewDto(
             order.Id,
             order.OrderNumber,
@@ -96,6 +140,7 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             totalProcesses,
             processStatuses,
             processDurations,
+            processPaused,
             processDependencies,
             order.Attachments.Count,
             order.CreatedAt);

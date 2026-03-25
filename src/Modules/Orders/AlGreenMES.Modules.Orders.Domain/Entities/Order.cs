@@ -102,12 +102,30 @@ public class Order : AuditableEntity
         if (Status == OrderStatus.Completed || Status == OrderStatus.Cancelled)
             throw new DomainException("INVALID_STATUS", "Cannot cancel completed or already cancelled orders.");
 
-        // Stop all running process timers
+        // Stop all running process timers (both main and sub-process timers)
         foreach (var item in _items)
         {
             foreach (var proc in item.Processes)
             {
-                if (proc.Status == Enums.ProcessStatus.InProgress && !proc.PausedAt.HasValue)
+                if (proc.Status != Enums.ProcessStatus.InProgress) continue;
+
+                // Close any open sub-process logs first
+                foreach (var sub in proc.SubProcesses)
+                {
+                    if (sub.Status == Enums.SubProcessStatus.InProgress)
+                    {
+                        var openLog = sub.GetOpenLog();
+                        if (openLog != null)
+                        {
+                            openLog.End();
+                            if (openLog.DurationMinutes.HasValue)
+                                sub.AddDuration(openLog.DurationMinutes.Value);
+                        }
+                    }
+                }
+
+                // Pause main process timer (for no-sub-process path)
+                if (!proc.PausedAt.HasValue)
                 {
                     proc.Pause();
                 }

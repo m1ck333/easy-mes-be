@@ -26,6 +26,29 @@ public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery, Order
 
         var dto = order.Adapt<OrderDetailDto>();
 
+        // Enrich sub-process DTOs with timer info from logs
+        var enrichedItems = dto.Items.Select(item =>
+        {
+            var orderItem = order.Items.First(i => i.Id == item.Id);
+            var enrichedProcesses = item.Processes.Select(proc =>
+            {
+                var entity = orderItem.Processes.First(p => p.Id == proc.Id);
+                var enrichedSubs = proc.SubProcesses.Select(sub =>
+                {
+                    var subEntity = entity.SubProcesses.First(s => s.Id == sub.Id);
+                    var openLog = subEntity.GetOpenLog();
+                    return sub with
+                    {
+                        IsTimerRunning = openLog != null,
+                        CurrentLogStartedAt = openLog?.StartTime
+                    };
+                }).ToList();
+                return proc with { SubProcesses = enrichedSubs };
+            }).ToList();
+            return item with { Processes = enrichedProcesses };
+        }).ToList();
+        dto = dto with { Items = enrichedItems };
+
         // Set order-level attachments
         var orderLevelAttachments = attachments
             .Where(a => a.OrderItemId == null)

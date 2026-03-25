@@ -35,6 +35,7 @@ public class OrderRepository : IOrderRepository
             .Include(o => o.Items)
                 .ThenInclude(i => i.Processes)
                     .ThenInclude(p => p.SubProcesses)
+                        .ThenInclude(sp => sp.Logs)
             .Include(o => o.Items)
                 .ThenInclude(i => i.SpecialRequests)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -128,6 +129,8 @@ public class OrderRepository : IOrderRepository
         var query = _dbContext.Orders
             .Include(o => o.Items)
                 .ThenInclude(i => i.Processes)
+                    .ThenInclude(p => p.SubProcesses)
+                        .ThenInclude(sp => sp.Logs)
             .Include(o => o.Attachments)
             .Where(o => o.TenantId == tenantId);
 
