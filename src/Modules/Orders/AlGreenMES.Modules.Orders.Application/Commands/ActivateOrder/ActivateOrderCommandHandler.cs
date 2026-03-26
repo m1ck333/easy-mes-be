@@ -1,6 +1,7 @@
 using AlGreenMES.BuildingBlocks.Common.Exceptions;
 using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
+using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
 using MediatR;
 
@@ -24,17 +25,20 @@ public class ActivateOrderCommandHandler : IRequestHandler<ActivateOrderCommand,
         var order = await _orderRepository.GetByIdWithFullDetailsAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Order", request.Id);
 
-        // Reset timers for selected processes before activating
-        if (request.ResetProcessIds is { Count: > 0 })
+        // Handle previously started processes (reactivation after cancel)
+        var resetIds = request.ResetProcessIds ?? new List<Guid>();
+        foreach (var item in order.Items)
         {
-            foreach (var item in order.Items)
+            foreach (var proc in item.Processes)
             {
-                foreach (var proc in item.Processes)
+                if (resetIds.Contains(proc.Id))
                 {
-                    if (request.ResetProcessIds.Contains(proc.Id))
-                    {
-                        proc.ResetTimer();
-                    }
+                    proc.ResetTimer();
+                }
+                else if (proc.Status == ProcessStatus.InProgress)
+                {
+                    // Return paused/running processes to Pending - worker starts manually
+                    proc.ReturnToPending();
                 }
             }
         }

@@ -152,6 +152,13 @@ public class Order : AuditableEntity
         Priority = newPriority;
     }
 
+    public void UndoComplete()
+    {
+        if (Status != OrderStatus.Completed)
+            throw new DomainException("INVALID_STATUS", "Only completed orders can be reverted.");
+        Status = OrderStatus.Active;
+    }
+
     public bool HasProductionStarted()
     {
         return _items.Any(i => i.Processes.Any(p => p.Status != Enums.ProcessStatus.Pending));

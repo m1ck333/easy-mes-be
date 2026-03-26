@@ -86,12 +86,16 @@ public class GetTabletQueueQueryHandler : IRequestHandler<GetTabletQueueQuery, I
 
                         if (!allDepsCompleted) continue;
 
+                        var duration = process.SubProcesses.Any(sp => !sp.IsWithdrawn)
+                            ? process.SubProcesses.Sum(sp => sp.TotalDurationMinutes)
+                            : process.TotalDurationMinutes;
                         var dto = process.Adapt<TabletQueueItemDto>() with
                         {
                             ProductCategoryName = category?.Name,
                             SpecialRequestNames = specialRequestNames,
                             CompletedProcessCount = completedCount,
-                            TotalProcessCount = totalCount
+                            TotalProcessCount = totalCount,
+                            TotalDurationMinutes = duration
                         };
                         items.Add(dto);
                     }

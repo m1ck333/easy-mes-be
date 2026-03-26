@@ -17,4 +17,5 @@ public record TabletQueueItemDto(
     ProcessStatus Status,
     List<string> SpecialRequestNames,
     int CompletedProcessCount,
-    int TotalProcessCount);
+    int TotalProcessCount,
+    int TotalDurationMinutes);

@@ -1,5 +1,4 @@
 using AlGreenMES.BuildingBlocks.Common.Exceptions;
-using AlGreenMES.Modules.Orders.Application.DTOs.Events;
 using AlGreenMES.Modules.Orders.Application.Interfaces;
 using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
@@ -29,15 +28,19 @@ public class RestartProcessCommandHandler : IRequestHandler<RestartProcessComman
         if (process == null)
             throw new NotFoundException("OrderItemProcess", request.OrderItemProcessId);
 
-        if (process.OrderItem.Order.Status != OrderStatus.Active)
-            throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active.");
+        var order = process.OrderItem.Order;
+        if (order.Status != OrderStatus.Active && order.Status != OrderStatus.Completed)
+            throw new DomainException("ORDER_NOT_ACTIVE", "Order must be active or completed.");
 
         process.Restart(request.ResetTime);
+
+        // If order was completed, revert to active
+        if (order.Status == OrderStatus.Completed)
+            order.UndoComplete();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await _eventService.NotifyProcessStartedAsync(new ProcessStartedEvent(
-            process.Id, process.ProcessId, process.OrderItem.Order.Id,
-            process.OrderItem.Order.OrderNumber, process.OrderItem.Order.TenantId), cancellationToken);
+        await _eventService.NotifyOrderUpdatedAsync(
+            process.OrderItem.Order.TenantId, process.OrderItem.Order.Id, cancellationToken);
 
         return Unit.Value;
     }

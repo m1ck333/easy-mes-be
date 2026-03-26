@@ -119,9 +119,9 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
                     var hasSubs = p.SubProcesses.Any(sp => !sp.IsWithdrawn);
                     if (hasSubs)
                     {
-                        var anyRunning = p.SubProcesses.Any(sp => sp.Status == SubProcessStatus.InProgress);
+                        var anyTimerRunning = p.SubProcesses.Any(sp => sp.Logs != null && sp.Logs.Any(l => l.EndTime == null));
                         var allDone = p.SubProcesses.Where(sp => !sp.IsWithdrawn).All(sp => sp.Status == SubProcessStatus.Completed);
-                        return !anyRunning && !allDone;
+                        return !anyTimerRunning && !allDone;
                     }
                     return p.PausedAt.HasValue;
                 });
