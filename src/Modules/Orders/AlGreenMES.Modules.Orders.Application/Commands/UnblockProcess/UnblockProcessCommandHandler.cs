@@ -29,6 +29,13 @@ public class UnblockProcessCommandHandler : IRequestHandler<UnblockProcessComman
 
         process.Unblock(request.UserId, request.ResetTime);
 
+        // Resolve all approved block requests for this process
+        var approvedBlocks = await _blockRequestRepository.GetApprovedByProcessIdAsync(request.OrderItemProcessId, cancellationToken);
+        foreach (var block in approvedBlocks)
+        {
+            block.Resolve(request.UserId);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await _eventService.NotifyProcessUnblockedAsync(

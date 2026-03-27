@@ -58,6 +58,15 @@ public class ApproveBlockRequestCommandHandler : IRequestHandler<ApproveBlockReq
 
                 process.Block(request.HandledByUserId, request.BlockReason);
             }
+
+            // Auto-approve other pending block requests for the same process
+            var otherPending = await _blockRequestRepository.GetPendingByProcessIdAsync(
+                blockRequest.OrderItemProcessId.Value, cancellationToken);
+            foreach (var other in otherPending)
+            {
+                if (other.Id != blockRequest.Id)
+                    other.Approve(request.HandledByUserId, request.BlockReason);
+            }
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

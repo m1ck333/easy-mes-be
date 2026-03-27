@@ -80,10 +80,9 @@ public class BlockRequest : TenantEntity
     public void Resolve(Guid handledByUserId)
     {
         if (Status != RequestStatus.Approved) return;
-        Status = RequestStatus.Rejected;
+        Status = RequestStatus.Resolved;
         HandledByUserId = handledByUserId;
         HandledAt = DateTime.UtcNow;
-        RejectionNote = null;
         UpdatedAt = DateTime.UtcNow;
     }
 }

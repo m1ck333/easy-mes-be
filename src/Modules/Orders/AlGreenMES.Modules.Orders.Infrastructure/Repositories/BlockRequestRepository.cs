@@ -91,4 +91,11 @@ public class BlockRequestRepository : IBlockRequestRepository
             .Where(br => br.OrderItemProcessId == orderItemProcessId && br.Status == RequestStatus.Approved)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<BlockRequest>> GetPendingByProcessIdAsync(Guid orderItemProcessId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.BlockRequests
+            .Where(br => br.OrderItemProcessId == orderItemProcessId && br.Status == RequestStatus.Pending)
+            .ToListAsync(cancellationToken);
+    }
 }
