@@ -41,6 +41,7 @@ public static class OrdersInfrastructureServiceRegistration
         services.AddScoped<IWebPushService, WebPushService>();
 
         services.AddScoped<IDashboardQueryService, DashboardQueryService>();
+        services.AddScoped<IReportingQueryService, ReportingQueryService>();
 
         return services;
     }
