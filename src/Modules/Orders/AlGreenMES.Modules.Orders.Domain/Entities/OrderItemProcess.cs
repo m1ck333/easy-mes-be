@@ -91,10 +91,21 @@ public class OrderItemProcess : TenantEntity
     {
         if (string.IsNullOrWhiteSpace(reason))
             throw new DomainException("REASON_REQUIRED", "Block reason is required.");
+
+        // Save running timer before blocking (for non-sub-process processes)
+        if (Status == ProcessStatus.InProgress && !PausedAt.HasValue && (StartedAt.HasValue || ResumedAt.HasValue))
+        {
+            var sessionStart = ResumedAt ?? StartedAt ?? DateTime.UtcNow;
+            var sessionSeconds = (int)(DateTime.UtcNow - sessionStart).TotalSeconds;
+            TotalDurationMinutes += sessionSeconds;
+        }
+
         Status = ProcessStatus.Blocked;
         BlockedAt = DateTime.UtcNow;
         BlockedByUserId = userId;
         BlockReason = reason;
+        PausedAt = null;
+        ResumedAt = null;
         UpdatedAt = DateTime.UtcNow;
     }
 
