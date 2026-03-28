@@ -103,31 +103,32 @@ public class OrderItemProcess : TenantEntity
         if (Status != ProcessStatus.Blocked)
             throw new DomainException("NOT_BLOCKED", "Process is not blocked.");
 
-        // Always return to Pending - worker starts manually from tablet
-        Status = ProcessStatus.Pending;
-        PausedAt = null;
+        // Return to InProgress+Paused - worker clicks Resume on tablet
+        Status = ProcessStatus.InProgress;
+        PausedAt = DateTime.UtcNow;
         ResumedAt = null;
-        StartedAt = null;
-
-        // Reset sub-processes
-        foreach (var sub in _subProcesses)
-        {
-            var openLog = sub.GetOpenLog();
-            if (openLog != null) openLog.End();
-            if (resetTime)
-            {
-                sub.ResetDuration();
-            }
-            else
-            {
-                sub.ReturnToPending();
-            }
-        }
 
         if (resetTime)
         {
             TotalDurationMinutes = 0;
+            StartedAt = DateTime.UtcNow;
             CompletedAt = null;
+            foreach (var sub in _subProcesses)
+            {
+                var openLog = sub.GetOpenLog();
+                if (openLog != null) openLog.End();
+                sub.ResetDuration();
+            }
+        }
+        else
+        {
+            if (StartedAt == null) StartedAt = DateTime.UtcNow;
+            foreach (var sub in _subProcesses)
+            {
+                var openLog = sub.GetOpenLog();
+                if (openLog != null) openLog.End();
+                sub.ReturnToPending();
+            }
         }
 
         UnblockedAt = DateTime.UtcNow;
@@ -175,10 +176,11 @@ public class OrderItemProcess : TenantEntity
 
     public void ReturnToPending()
     {
-        Status = ProcessStatus.Pending;
-        PausedAt = null;
+        // Return to InProgress+Paused - worker clicks Resume on tablet
+        Status = ProcessStatus.InProgress;
+        PausedAt = DateTime.UtcNow;
         ResumedAt = null;
-        StartedAt = null;
+        if (StartedAt == null) StartedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
 
         foreach (var sub in _subProcesses)
@@ -226,16 +228,20 @@ public class OrderItemProcess : TenantEntity
         if (Status != ProcessStatus.Completed)
             throw new DomainException("INVALID_STATUS", "Can only restart completed processes.");
 
-        // Return to Pending - worker starts manually from tablet
-        Status = ProcessStatus.Pending;
+        // Return to InProgress+Paused - worker clicks Resume on tablet
+        Status = ProcessStatus.InProgress;
         CompletedAt = null;
-        PausedAt = null;
+        PausedAt = DateTime.UtcNow;
         ResumedAt = null;
-        StartedAt = null;
 
         if (resetTime)
         {
             TotalDurationMinutes = 0;
+            StartedAt = DateTime.UtcNow;
+        }
+        else if (StartedAt == null)
+        {
+            StartedAt = DateTime.UtcNow;
         }
 
         // Reset sub-processes to Pending
