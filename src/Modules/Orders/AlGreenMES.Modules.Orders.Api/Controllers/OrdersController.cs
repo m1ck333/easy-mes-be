@@ -280,6 +280,12 @@ public class OrdersController : ControllerBase
         if (stream == null)
             return NotFound();
 
+        // For PDFs, serve inline so browsers/apps can display them directly
+        if (attachment.ContentType == "application/pdf")
+        {
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{attachment.OriginalFileName}\"";
+            return File(stream, attachment.ContentType);
+        }
         return File(stream, attachment.ContentType, attachment.OriginalFileName);
     }
 
