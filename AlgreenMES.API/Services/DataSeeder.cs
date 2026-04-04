@@ -227,7 +227,7 @@ public static class DataSeeder
             var process = processesWithSubs.First(p => p.Code == processCode);
             foreach (var (subName, subOrder) in subs)
             {
-                if (!process.SubProcesses.Any(sp => sp.Name == subName))
+                if (!process.SubProcesses.Any(sp => sp.Name == subName || sp.SequenceOrder == subOrder))
                 {
                     var subProcess = process.AddSubProcess(subName, subOrder);
                     productionDb.SubProcesses.Add(subProcess);
