@@ -94,10 +94,16 @@ public class ReportingQueryService : IReportingQueryService
                 && p.TotalDurationMinutes > 0);
 
         if (from.HasValue)
-            query = query.Where(p => p.CompletedAt >= from.Value);
+        {
+            var fromUtc = DateTime.SpecifyKind(from.Value.Date, DateTimeKind.Utc);
+            query = query.Where(p => p.CompletedAt >= fromUtc);
+        }
 
         if (to.HasValue)
-            query = query.Where(p => p.CompletedAt <= to.Value);
+        {
+            var toUtc = DateTime.SpecifyKind(to.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            query = query.Where(p => p.CompletedAt <= toUtc);
+        }
 
         if (processId.HasValue)
             query = query.Where(p => p.ProcessId == processId.Value);
@@ -114,8 +120,8 @@ public class ReportingQueryService : IReportingQueryService
             var proc = processes.GetValueOrDefault(p.ProcessId);
             return new TimeTrackingItemDto(
                 p.Id,
-                p.OrderItem.Order.OrderNumber,
-                p.OrderItem.ProductName,
+                p.OrderItem?.Order?.OrderNumber ?? "—",
+                p.OrderItem?.ProductName ?? "—",
                 p.ProcessId,
                 proc?.Code ?? "?",
                 proc?.Name ?? "Unknown",
