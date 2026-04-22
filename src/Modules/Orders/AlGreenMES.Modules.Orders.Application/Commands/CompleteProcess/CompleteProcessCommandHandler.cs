@@ -91,30 +91,12 @@ public class CompleteProcessCommandHandler : IRequestHandler<CompleteProcessComm
             }
         }
 
-        // Check if order is now fully completed and clean up attachments
-        try
+        // Check if order is now fully completed
+        var order = await _orderRepository.GetByIdWithFullDetailsAsync(orderId, cancellationToken);
+        if (order != null && order.Items.All(i => i.IsCompleted()))
         {
-            var order = await _orderRepository.GetByIdWithFullDetailsAsync(orderId, cancellationToken);
-            if (order != null && order.Items.All(i => i.IsCompleted()))
-            {
-                order.MarkCompleted();
-                var attachments = await _attachmentRepository.GetByOrderIdAsync(orderId, cancellationToken);
-                if (attachments.Count > 0)
-                {
-                    _attachmentRepository.RemoveRange(attachments);
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
-                    await _fileStorageService.DeleteDirectoryAsync(
-                        Path.Combine("orders", tenantId.ToString(), orderId.ToString()), cancellationToken);
-                }
-                else
-                {
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to clean up attachments for completed order {OrderId}", orderId);
+            order.MarkCompleted();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         return Unit.Value;

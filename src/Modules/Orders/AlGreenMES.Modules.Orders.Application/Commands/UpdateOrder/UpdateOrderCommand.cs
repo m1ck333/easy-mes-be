@@ -11,6 +11,7 @@ public record UpdateOrderSpecialRequestRemove(Guid ItemId, Guid SpecialRequestId
 
 public record UpdateOrderCommand(
     Guid Id,
+    string? OrderNumber,
     string? Notes,
     int? CustomWarningDays,
     int? CustomCriticalDays,

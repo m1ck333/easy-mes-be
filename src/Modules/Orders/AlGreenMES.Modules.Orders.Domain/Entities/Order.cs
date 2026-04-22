@@ -179,8 +179,14 @@ public class Order : AuditableEntity
         }
     }
 
-    public void Update(string? notes, int? customWarningDays, int? customCriticalDays)
+    public void Update(string? orderNumber, string? notes, int? customWarningDays, int? customCriticalDays)
     {
+        if (orderNumber != null)
+        {
+            if (string.IsNullOrWhiteSpace(orderNumber))
+                throw new DomainException("INVALID_ORDER_NUMBER", "Order number is required.");
+            OrderNumber = orderNumber.Trim();
+        }
         Notes = notes?.Trim();
         CustomWarningDays = customWarningDays;
         CustomCriticalDays = customCriticalDays;

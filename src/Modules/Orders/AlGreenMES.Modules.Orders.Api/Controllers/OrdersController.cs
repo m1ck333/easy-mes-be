@@ -135,7 +135,7 @@ public class OrdersController : ControllerBase
     {
         var result = await _mediator.Send(
             new UpdateOrderCommand(
-                id, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
+                id, request.OrderNumber, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
                 request.AddItems?.Select(i => new Application.Commands.UpdateOrder.UpdateOrderItemInput(i.ProductCategoryId, i.ProductName, i.Quantity, i.Notes)).ToList(),
                 request.RemoveItemIds,
                 request.ComplexityOverrides?.Select(c => new Application.Commands.UpdateOrder.UpdateOrderComplexityInput(c.ItemId, c.ProcessId, c.Complexity)).ToList(),
