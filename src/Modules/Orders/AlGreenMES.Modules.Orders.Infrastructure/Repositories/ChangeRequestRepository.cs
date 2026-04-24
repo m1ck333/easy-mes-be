@@ -48,7 +48,7 @@ public class ChangeRequestRepository : IChangeRequestRepository
         await _dbContext.ChangeRequests.AddAsync(request, cancellationToken);
     }
 
-    public async Task<PagedResult<ChangeRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, ChangeRequestType? requestType, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ChangeRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, ChangeRequestType? requestType, Guid? orderId, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.ChangeRequests
             .Include(cr => cr.Order)
@@ -60,8 +60,13 @@ public class ChangeRequestRepository : IChangeRequestRepository
         if (requestType.HasValue)
             query = query.Where(cr => cr.RequestType == requestType.Value);
 
+        if (orderId.HasValue)
+            query = query.Where(cr => cr.OrderId == orderId.Value);
+
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(cr => cr.Description.Contains(search));
+            query = query.Where(cr =>
+                cr.Description.ToLower().Contains(search.ToLower()) ||
+                cr.Order.OrderNumber.ToLower().Contains(search.ToLower()));
 
         if (createdFrom.HasValue)
         {
@@ -101,7 +106,9 @@ public class ChangeRequestRepository : IChangeRequestRepository
             query = query.Where(cr => cr.Status == status.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(cr => cr.Description.Contains(search));
+            query = query.Where(cr =>
+                cr.Description.ToLower().Contains(search.ToLower()) ||
+                cr.Order.OrderNumber.ToLower().Contains(search.ToLower()));
 
         query = query.OrderByDescending(cr => cr.CreatedAt);
 

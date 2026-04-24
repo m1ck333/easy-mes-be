@@ -18,4 +18,6 @@ public record TabletQueueItemDto(
     List<string> SpecialRequestNames,
     int CompletedProcessCount,
     int TotalProcessCount,
-    int TotalDurationMinutes);
+    int TotalDurationMinutes,
+    string? OrderNotes,
+    string? ItemNotes);

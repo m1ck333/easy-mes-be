@@ -3,17 +3,20 @@ using System;
 using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
+namespace AlGreenMES.Modules.Orders.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(OrdersDbContext))]
-    partial class OrdersDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423082710_AddCompletedAtToOrder")]
+    partial class AddCompletedAtToOrder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -260,10 +263,6 @@ namespace AlGreenMES.Modules.Orders.Infrastructure.Migrations
                     b.Property<DateTime>("DeliveryDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("delivery_date");
-
-                    b.Property<bool>("IsInvoiced")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_invoiced");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)

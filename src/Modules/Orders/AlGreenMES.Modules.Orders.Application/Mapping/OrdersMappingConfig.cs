@@ -43,7 +43,9 @@ public static class OrdersMappingConfig
             .Map(dest => dest.Quantity, src => src.OrderItem.Quantity)
             .Map(dest => dest.SpecialRequestNames, src => new List<string>())
             .Map(dest => dest.CompletedProcessCount, src => 0)
-            .Map(dest => dest.TotalProcessCount, src => 0);
+            .Map(dest => dest.TotalProcessCount, src => 0)
+            .Map(dest => dest.OrderNotes, src => src.OrderItem.Order.Notes)
+            .Map(dest => dest.ItemNotes, src => src.OrderItem.Notes);
 
         config.NewConfig<OrderItemProcess, TabletActiveWorkDto>()
             .Map(dest => dest.OrderItemProcessId, src => src.Id)
@@ -58,7 +60,9 @@ public static class OrdersMappingConfig
             .Map(dest => dest.SpecialRequestNames, src => new List<string>())
             .Map(dest => dest.CompletedProcessCount, src => 0)
             .Map(dest => dest.TotalProcessCount, src => 0)
-            .Map(dest => dest.SubProcesses, src => src.SubProcesses);
+            .Map(dest => dest.SubProcesses, src => src.SubProcesses)
+            .Map(dest => dest.OrderNotes, src => src.OrderItem.Order.Notes)
+            .Map(dest => dest.ItemNotes, src => src.OrderItem.Notes);
 
         config.NewConfig<OrderItemSubProcess, TabletSubProcessDto>();
 

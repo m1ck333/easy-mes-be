@@ -21,7 +21,7 @@ public class GetBlockRequestsQueryHandler : IRequestHandler<GetBlockRequestsQuer
     public async Task<PagedResult<BlockRequestDto>> Handle(GetBlockRequestsQuery request, CancellationToken cancellationToken)
     {
         var result = await _blockRequestRepository.GetPagedAsync(
-            request.TenantId, request.Status, request.Search,
+            request.TenantId, request.Status, request.OrderId, request.Search,
             request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
             request.SortBy, request.IsDescending,
             request.GetPage(), request.GetPageSize(), cancellationToken);

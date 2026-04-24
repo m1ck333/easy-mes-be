@@ -67,7 +67,7 @@ public class NotificationRepository : INotificationRepository
             query = query.Where(n => n.IsRead == isRead.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(n => n.Message.Contains(search));
+            query = query.Where(n => n.Message.ToLower().Contains(search.ToLower()));
 
         query = query.OrderByDescending(n => n.CreatedAt);
 

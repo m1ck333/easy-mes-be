@@ -113,7 +113,10 @@ public class OrderRepository : IOrderRepository
         }
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(o => o.OrderNumber.Contains(search));
+        {
+            var s = search.ToLower();
+            query = query.Where(o => o.OrderNumber.ToLower().Contains(s));
+        }
 
         query = query
             .OrderBy(o => o.Status == OrderStatus.Completed ? 1 : 0)
@@ -153,7 +156,10 @@ public class OrderRepository : IOrderRepository
         }
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(o => o.OrderNumber.Contains(search));
+        {
+            var s = search.ToLower();
+            query = query.Where(o => o.OrderNumber.ToLower().Contains(s));
+        }
 
         // Dynamic sorting
         IOrderedQueryable<Order> sorted;
@@ -182,6 +188,9 @@ public class OrderRepository : IOrderRepository
                 break;
             case "createdat":
                 sorted = isDescending ? query.OrderByDescending(o => o.CreatedAt) : query.OrderBy(o => o.CreatedAt);
+                break;
+            case "completedat":
+                sorted = isDescending ? query.OrderByDescending(o => o.CompletedAt) : query.OrderBy(o => o.CompletedAt);
                 break;
             case "deliverydate":
                 sorted = isDescending ? query.OrderByDescending(o => o.DeliveryDate) : query.OrderBy(o => o.DeliveryDate);

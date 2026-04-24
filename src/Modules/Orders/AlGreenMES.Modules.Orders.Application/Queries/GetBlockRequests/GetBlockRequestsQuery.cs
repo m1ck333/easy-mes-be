@@ -8,4 +8,5 @@ public record GetBlockRequestsQuery : PagedQuery<PagedResult<BlockRequestDto>>
 {
     public Guid TenantId { get; init; }
     public RequestStatus? Status { get; init; }
+    public Guid? OrderId { get; init; }
 }

@@ -13,4 +13,6 @@ public record OrderDto(
     string? Notes,
     int? CustomWarningDays,
     int? CustomCriticalDays,
-    int ItemCount);
+    int ItemCount,
+    DateTime? CompletedAt,
+    bool IsInvoiced);

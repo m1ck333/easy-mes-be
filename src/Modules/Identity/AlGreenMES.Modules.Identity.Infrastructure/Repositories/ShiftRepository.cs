@@ -42,7 +42,10 @@ public class ShiftRepository : IShiftRepository
             query = query.Where(s => s.IsActive == isActive.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(s => s.Name.Contains(search));
+        {
+            var s = search.ToLower();
+            query = query.Where(x => x.Name.ToLower().Contains(s));
+        }
 
         if (createdFrom.HasValue)
         {

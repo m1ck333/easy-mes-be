@@ -6,6 +6,7 @@ using AlGreenMES.Modules.Orders.Application.Commands.AddOrderItem;
 using AlGreenMES.Modules.Orders.Application.Commands.AddSpecialRequest;
 using AlGreenMES.Modules.Orders.Application.Commands.CancelOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.ChangePriority;
+using AlGreenMES.Modules.Orders.Application.Commands.SetOrderInvoiced;
 using AlGreenMES.Modules.Orders.Application.Commands.CreateOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.DeleteOrderAttachment;
 using AlGreenMES.Modules.Orders.Application.Commands.OverrideComplexity;
@@ -135,7 +136,7 @@ public class OrdersController : ControllerBase
     {
         var result = await _mediator.Send(
             new UpdateOrderCommand(
-                id, request.OrderNumber, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
+                id, request.OrderNumber, request.DeliveryDate, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
                 request.AddItems?.Select(i => new Application.Commands.UpdateOrder.UpdateOrderItemInput(i.ProductCategoryId, i.ProductName, i.Quantity, i.Notes)).ToList(),
                 request.RemoveItemIds,
                 request.ComplexityOverrides?.Select(c => new Application.Commands.UpdateOrder.UpdateOrderComplexityInput(c.ItemId, c.ProcessId, c.Complexity)).ToList(),
@@ -208,6 +209,14 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> ChangePriority(Guid id, [FromBody] ChangePriorityRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new ChangePriorityCommand(id, request.Priority), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/invoiced")]
+    [Authorize(Roles = "Admin,Manager,SalesManager,Coordinator")]
+    public async Task<IActionResult> SetInvoiced(Guid id, [FromBody] SetOrderInvoicedRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new SetOrderInvoicedCommand(id, request.IsInvoiced), cancellationToken);
         return Ok(result);
     }
 

@@ -19,4 +19,6 @@ public record OrderMasterViewDto(
     /// <summary>Map of processId → list of processIds it depends on</summary>
     Dictionary<string, List<string>> ProcessDependencies,
     int AttachmentCount,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    DateTime? CompletedAt,
+    bool IsInvoiced);

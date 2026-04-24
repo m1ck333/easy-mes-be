@@ -29,7 +29,18 @@ public class CheckInCommandHandler : IRequestHandler<CheckInCommand, WorkSession
     {
         var active = await _workSessionRepository.GetActiveSessionAsync(request.UserId, cancellationToken);
         if (active != null)
-            throw new DomainException("ALREADY_CHECKED_IN", "User already has an active session.");
+        {
+            // Auto-close stale session left open from a previous day (e.g. tablet PWA closed without logout).
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            if (active.Date != today)
+            {
+                active.CheckOut();
+            }
+            else
+            {
+                throw new DomainException("ALREADY_CHECKED_IN", "User already has an active session.");
+            }
+        }
 
         var session = WorkSession.CheckIn(request.TenantId, request.UserId);
 

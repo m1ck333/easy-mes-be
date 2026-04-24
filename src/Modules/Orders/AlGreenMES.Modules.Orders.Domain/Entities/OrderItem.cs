@@ -26,30 +26,25 @@ public class OrderItem : AuditableEntity
     }
 
     internal static OrderItem Create(Guid tenantId, Guid orderId, Guid productCategoryId,
-        string productName, int quantity, string? notes)
+        string? productName, int quantity, string? notes)
     {
-        if (string.IsNullOrWhiteSpace(productName))
-            throw new DomainException("INVALID_PRODUCT_NAME", "Product name is required.");
-
         return new OrderItem
         {
             TenantId = tenantId,
             OrderId = orderId,
             ProductCategoryId = productCategoryId,
-            ProductName = productName.Trim(),
+            ProductName = productName?.Trim() ?? string.Empty,
             Quantity = quantity,
             Notes = notes?.Trim()
         };
     }
 
-    public void Update(string productName, int quantity, string? notes)
+    public void Update(string? productName, int quantity, string? notes)
     {
-        if (string.IsNullOrWhiteSpace(productName))
-            throw new DomainException("INVALID_PRODUCT_NAME", "Product name is required.");
         if (quantity <= 0)
             throw new DomainException("INVALID_QUANTITY", "Quantity must be positive.");
 
-        ProductName = productName.Trim();
+        ProductName = productName?.Trim() ?? string.Empty;
         Quantity = quantity;
         Notes = notes?.Trim();
     }

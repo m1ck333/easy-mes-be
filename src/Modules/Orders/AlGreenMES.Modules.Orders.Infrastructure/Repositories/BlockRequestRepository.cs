@@ -40,7 +40,7 @@ public class BlockRequestRepository : IBlockRequestRepository
         await _dbContext.BlockRequests.AddAsync(request, cancellationToken);
     }
 
-    public async Task<PagedResult<BlockRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<BlockRequest>> GetPagedAsync(Guid tenantId, RequestStatus? status, Guid? orderId, string? search, DateTime? createdFrom, DateTime? createdTo, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.BlockRequests
             .Include(br => br.OrderItemProcess)
@@ -51,8 +51,16 @@ public class BlockRequestRepository : IBlockRequestRepository
         if (status.HasValue)
             query = query.Where(br => br.Status == status.Value);
 
+        if (orderId.HasValue)
+            query = query.Where(br => br.OrderItemProcess != null && br.OrderItemProcess.OrderItem.OrderId == orderId.Value);
+
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(br => br.RequestNote != null && br.RequestNote.Contains(search));
+        {
+            var s = search.ToLower();
+            query = query.Where(br =>
+                (br.RequestNote != null && br.RequestNote.ToLower().Contains(s)) ||
+                (br.OrderItemProcess != null && br.OrderItemProcess.OrderItem.Order.OrderNumber.ToLower().Contains(s)));
+        }
 
         if (createdFrom.HasValue)
         {

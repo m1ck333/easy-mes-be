@@ -14,6 +14,8 @@ public class Order : AuditableEntity
     public string? Notes { get; private set; }
     public int? CustomWarningDays { get; private set; }
     public int? CustomCriticalDays { get; private set; }
+    public DateTime? CompletedAt { get; private set; }
+    public bool IsInvoiced { get; private set; }
 
     private readonly List<OrderItem> _items = new();
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
@@ -49,7 +51,7 @@ public class Order : AuditableEntity
         return order;
     }
 
-    public OrderItem AddItem(Guid productCategoryId, string productName, int quantity, string? notes = null)
+    public OrderItem AddItem(Guid productCategoryId, string? productName, int quantity, string? notes = null)
     {
         if (Status != OrderStatus.Draft)
             throw new DomainException("ORDER_NOT_DRAFT", "Can only add items to draft orders.");
@@ -157,6 +159,7 @@ public class Order : AuditableEntity
         if (Status != OrderStatus.Completed)
             throw new DomainException("INVALID_STATUS", "Only completed orders can be reverted.");
         Status = OrderStatus.Active;
+        CompletedAt = null;
     }
 
     public bool HasProductionStarted()
@@ -176,16 +179,28 @@ public class Order : AuditableEntity
         {
             Status = OrderStatus.Completed;
             Priority = 0;
+            CompletedAt = DateTime.UtcNow;
         }
     }
 
-    public void Update(string? orderNumber, string? notes, int? customWarningDays, int? customCriticalDays)
+    public void SetInvoiced(bool invoiced)
+    {
+        IsInvoiced = invoiced;
+    }
+
+    public void Update(string? orderNumber, DateTime? deliveryDate, string? notes, int? customWarningDays, int? customCriticalDays)
     {
         if (orderNumber != null)
         {
             if (string.IsNullOrWhiteSpace(orderNumber))
                 throw new DomainException("INVALID_ORDER_NUMBER", "Order number is required.");
             OrderNumber = orderNumber.Trim();
+        }
+        if (deliveryDate.HasValue)
+        {
+            DeliveryDate = deliveryDate.Value.Kind == DateTimeKind.Utc
+                ? deliveryDate.Value
+                : DateTime.SpecifyKind(deliveryDate.Value, DateTimeKind.Utc);
         }
         Notes = notes?.Trim();
         CustomWarningDays = customWarningDays;

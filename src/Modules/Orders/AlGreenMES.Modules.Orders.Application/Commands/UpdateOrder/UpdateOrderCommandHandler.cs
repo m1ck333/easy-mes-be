@@ -37,7 +37,7 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Ord
         var order = await _orderRepository.GetByIdWithFullDetailsAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Order", request.Id);
 
-        order.Update(request.OrderNumber, request.Notes, request.CustomWarningDays, request.CustomCriticalDays);
+        order.Update(request.OrderNumber, request.DeliveryDate, request.Notes, request.CustomWarningDays, request.CustomCriticalDays);
 
         // Remove items
         if (request.RemoveItemIds is { Count: > 0 })

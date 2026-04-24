@@ -22,7 +22,9 @@ public record TabletActiveWorkDto(
     List<string> SpecialRequestNames,
     int CompletedProcessCount,
     int TotalProcessCount,
-    List<TabletSubProcessDto> SubProcesses);
+    List<TabletSubProcessDto> SubProcesses,
+    string? OrderNotes,
+    string? ItemNotes);
 
 public record TabletSubProcessDto(
     Guid Id,

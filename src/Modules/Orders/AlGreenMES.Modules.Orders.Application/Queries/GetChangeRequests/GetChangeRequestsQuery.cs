@@ -9,4 +9,5 @@ public record GetChangeRequestsQuery : PagedQuery<PagedResult<ChangeRequestDto>>
     public Guid TenantId { get; init; }
     public RequestStatus? Status { get; init; }
     public ChangeRequestType? RequestType { get; init; }
+    public Guid? OrderId { get; init; }
 }

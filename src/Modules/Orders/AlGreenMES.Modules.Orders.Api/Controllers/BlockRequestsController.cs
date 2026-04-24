@@ -26,6 +26,7 @@ public class BlockRequestsController : ControllerBase
     public async Task<IActionResult> GetBlockRequests(
         [FromQuery] Guid tenantId,
         [FromQuery] RequestStatus? status,
+        [FromQuery] Guid? orderId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
@@ -39,6 +40,7 @@ public class BlockRequestsController : ControllerBase
         {
             TenantId = tenantId,
             Status = status,
+            OrderId = orderId,
             Page = page,
             PageSize = pageSize,
             Search = search,

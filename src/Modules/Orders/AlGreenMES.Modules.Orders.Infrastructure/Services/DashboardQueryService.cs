@@ -141,9 +141,10 @@ public class DashboardQueryService : IDashboardQueryService
             .OrderBy(u => u.LastName).ThenBy(u => u.FirstName)
             .ToListAsync(cancellationToken);
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var activeSessions = await _ordersDb.WorkSessions
             .AsNoTracking()
-            .Where(ws => ws.TenantId == tenantId && ws.CheckOutTime == null)
+            .Where(ws => ws.TenantId == tenantId && ws.CheckOutTime == null && ws.Date == today)
             .ToDictionaryAsync(ws => ws.UserId, ws => ws, cancellationToken);
 
         var result = new List<WorkerStatusDto>();

@@ -18,7 +18,7 @@ public class GetChangeRequestsQueryHandler : IRequestHandler<GetChangeRequestsQu
     public async Task<PagedResult<ChangeRequestDto>> Handle(GetChangeRequestsQuery request, CancellationToken cancellationToken)
     {
         var result = await _changeRequestRepository.GetPagedAsync(
-            request.TenantId, request.Status, request.RequestType, request.Search,
+            request.TenantId, request.Status, request.RequestType, request.OrderId, request.Search,
             request.GetCreatedFromUtc(), request.GetCreatedToUtc(),
             request.SortBy, request.IsDescending,
             request.GetPage(), request.GetPageSize(), cancellationToken);

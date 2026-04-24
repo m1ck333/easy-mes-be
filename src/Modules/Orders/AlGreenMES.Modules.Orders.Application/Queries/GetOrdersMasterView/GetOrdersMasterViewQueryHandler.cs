@@ -143,7 +143,9 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             processPaused,
             processDependencies,
             order.Attachments.Count,
-            order.CreatedAt);
+            order.CreatedAt,
+            order.CompletedAt,
+            order.IsInvoiced);
     }
 
     private static ProcessStatus AggregateStatus(IGrouping<Guid, OrderItemProcess> group)

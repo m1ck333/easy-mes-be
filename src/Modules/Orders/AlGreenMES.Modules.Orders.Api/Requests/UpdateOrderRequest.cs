@@ -4,6 +4,7 @@ namespace AlGreenMES.Modules.Orders.Api.Requests;
 
 public record UpdateOrderRequest(
     string? OrderNumber,
+    DateTime? DeliveryDate,
     string? Notes,
     int? CustomWarningDays,
     int? CustomCriticalDays,

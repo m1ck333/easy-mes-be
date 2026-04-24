@@ -66,7 +66,10 @@ public class ProductCategoryRepository : IProductCategoryRepository
             query = query.Where(pc => pc.IsActive == isActive.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(pc => pc.Name.Contains(search));
+        {
+            var s = search.ToLower();
+            query = query.Where(pc => pc.Name.ToLower().Contains(s));
+        }
 
         if (createdFrom.HasValue)
         {
