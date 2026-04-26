@@ -6,7 +6,7 @@ namespace AlGreenMES.Modules.Orders.Api.Requests;
 public class CreateOrderAddItemInput
 {
     public Guid ProductCategoryId { get; set; }
-    public string ProductName { get; set; } = string.Empty;
+    public string? ProductName { get; set; }
     public int Quantity { get; set; }
     public string? Notes { get; set; }
     public List<IFormFile>? Attachments { get; set; }

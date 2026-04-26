@@ -14,7 +14,7 @@ public record UpdateOrderRequest(
     List<UpdateOrderAddSpecialRequestInput>? AddSpecialRequests = null,
     List<UpdateOrderRemoveSpecialRequestInput>? RemoveSpecialRequests = null);
 
-public record UpdateOrderAddItemInput(Guid ProductCategoryId, string ProductName, int Quantity, string? Notes);
+public record UpdateOrderAddItemInput(Guid ProductCategoryId, string? ProductName, int Quantity, string? Notes);
 public record UpdateOrderComplexityOverrideInput(Guid ItemId, Guid ProcessId, ComplexityType Complexity);
 public record UpdateOrderAddSpecialRequestInput(Guid ItemId, Guid SpecialRequestTypeId);
 public record UpdateOrderRemoveSpecialRequestInput(Guid ItemId, Guid SpecialRequestId);

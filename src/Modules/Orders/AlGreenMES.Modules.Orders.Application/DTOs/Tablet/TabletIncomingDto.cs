@@ -18,7 +18,9 @@ public record TabletIncomingDto(
     List<string> SpecialRequestNames,
     int CompletedProcessCount,
     int TotalProcessCount,
-    List<BlockingProcessDto> BlockingProcesses);
+    List<BlockingProcessDto> BlockingProcesses,
+    string? OrderNotes,
+    string? ItemNotes);
 
 public record BlockingProcessDto(
     Guid OrderItemProcessId,

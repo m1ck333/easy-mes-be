@@ -79,7 +79,9 @@ public static class OrdersMappingConfig
             .Map(dest => dest.SpecialRequestNames, src => new List<string>())
             .Map(dest => dest.CompletedProcessCount, src => 0)
             .Map(dest => dest.TotalProcessCount, src => 0)
-            .Map(dest => dest.BlockingProcesses, src => new List<BlockingProcessDto>());
+            .Map(dest => dest.BlockingProcesses, src => new List<BlockingProcessDto>())
+            .Map(dest => dest.OrderNotes, src => src.OrderItem.Order.Notes)
+            .Map(dest => dest.ItemNotes, src => src.OrderItem.Notes);
 
         config.NewConfig<OrderItemProcess, BlockingProcessDto>()
             .Map(dest => dest.OrderItemProcessId, src => src.Id);
