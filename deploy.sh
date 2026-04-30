@@ -17,10 +17,12 @@ if [ "$TARGET" = "pilot" ]; then
   BRANCH=master
   REMOTE_PATH=/opt/algreen/api/
   SERVICE=algreen-api
+  HOST_VAR=DEPLOY_HOST_PILOT
 elif [ "$TARGET" = "staging" ]; then
   BRANCH=staging
   REMOTE_PATH=/opt/alblue/api/
   SERVICE=alblue-api
+  HOST_VAR=DEPLOY_HOST_STAGING
 else
   echo "Usage: ./deploy.sh [staging|pilot]"
   echo "  staging → branch=staging  → /opt/alblue/api/   + alblue-api"
@@ -28,7 +30,6 @@ else
   exit 1
 fi
 
-HOST_VAR="DEPLOY_HOST_${TARGET^^}"
 HOST="${!HOST_VAR:-}"
 if [ -z "$HOST" ]; then
     echo "ERROR: $HOST_VAR not set. Copy .env.example to .env and fill in values."
