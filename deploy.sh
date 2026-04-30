@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load .env if present
+if [ -f "${SCRIPT_DIR}/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/.env"
+    set +a
+fi
+
 TARGET=${1:-}
 
 if [ "$TARGET" = "pilot" ]; then
@@ -18,6 +28,19 @@ else
   exit 1
 fi
 
+HOST_VAR="DEPLOY_HOST_${TARGET^^}"
+HOST="${!HOST_VAR:-}"
+if [ -z "$HOST" ]; then
+    echo "ERROR: $HOST_VAR not set. Copy .env.example to .env and fill in values."
+    exit 1
+fi
+
+DEPLOY_USER="${DEPLOY_USER:-root}"
+SSH_KEY_ARG=""
+if [ -n "${DEPLOY_SSH_KEY:-}" ]; then
+    SSH_KEY_ARG="-i ${DEPLOY_SSH_KEY}"
+fi
+
 if [ -n "$(git status --porcelain)" ]; then
   echo "❌ Working tree has uncommitted changes — commit or stash before deploying."
   exit 1
@@ -31,10 +54,10 @@ git pull --ff-only origin "$BRANCH"
 echo "🔨 Building backend (commit: $(git rev-parse --short HEAD))..."
 dotnet publish AlgreenMES.API/AlgreenMES.API.csproj -c Release -o ./publish
 
-echo "📦 Uploading to server ($TARGET → $REMOTE_PATH)..."
-rsync -az --delete --exclude='appsettings.Production.json' --exclude='uploads/' ./publish/ root@46.101.166.137:$REMOTE_PATH
+echo "📦 Uploading to server ($TARGET → ${DEPLOY_USER}@${HOST}:$REMOTE_PATH)..."
+rsync -az --delete --exclude='appsettings.Production.json' --exclude='uploads/' -e "ssh ${SSH_KEY_ARG}" ./publish/ "${DEPLOY_USER}@${HOST}:$REMOTE_PATH"
 
 echo "🔄 Restarting $SERVICE..."
-ssh root@46.101.166.137 "systemctl restart $SERVICE"
+ssh ${SSH_KEY_ARG} "${DEPLOY_USER}@${HOST}" "systemctl restart $SERVICE"
 
 echo "✅ Backend deployed to $TARGET (branch: $BRANCH, commit: $(git rev-parse --short HEAD))"
