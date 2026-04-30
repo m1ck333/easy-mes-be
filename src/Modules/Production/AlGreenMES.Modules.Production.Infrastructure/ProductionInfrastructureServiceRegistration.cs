@@ -5,6 +5,7 @@ using AlGreenMES.Modules.Production.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace AlGreenMES.Modules.Production.Infrastructure;
 
@@ -12,14 +13,29 @@ public static class ProductionInfrastructureServiceRegistration
 {
     public static IServiceCollection AddProductionInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(
-            configuration.GetConnectionString("DefaultConnection"));
+        var connectionString = new NpgsqlConnectionStringBuilder(configuration.GetConnectionString("DefaultConnection"))
+        {
+            MaxPoolSize = 100,
+            MinPoolSize = 5,
+            ConnectionIdleLifetime = 300,
+            ConnectionPruningInterval = 10,
+            Timeout = 15,
+            CommandTimeout = 30
+        }.ConnectionString;
+
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
         dataSourceBuilder.EnableDynamicJson();
         var dataSource = dataSourceBuilder.Build();
 
         services.AddDbContext<ProductionDbContext>(options =>
         {
-            options.UseNpgsql(dataSource);
+            options.UseNpgsql(dataSource, npgsql =>
+            {
+                npgsql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorCodesToAdd: null);
+            });
             options.UseSnakeCaseNamingConvention();
         });
 
