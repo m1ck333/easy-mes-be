@@ -64,7 +64,7 @@ public class BlockRequestsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/approve")]
-    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager,Coordinator")]
     public async Task<IActionResult> ApproveBlockRequest(Guid id, [FromBody] HandleBlockRequestRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -74,7 +74,7 @@ public class BlockRequestsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager,Coordinator")]
     public async Task<IActionResult> RejectBlockRequest(Guid id, [FromBody] HandleBlockRequestRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(

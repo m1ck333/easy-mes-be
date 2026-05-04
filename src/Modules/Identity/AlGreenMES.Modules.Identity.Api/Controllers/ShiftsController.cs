@@ -51,7 +51,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> CreateShift([FromBody] CreateShiftRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -62,7 +62,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> UpdateShift(Guid id, [FromBody] UpdateShiftRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(

@@ -38,7 +38,7 @@ public class ProcessWorkflowController : ControllerBase
     }
 
     [HttpPost("{id:guid}/unblock")]
-    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager,Coordinator")]
     public async Task<IActionResult> UnblockProcess(Guid id, [FromBody] UnblockProcessRequest request, CancellationToken cancellationToken)
     {
         await _mediator.Send(new UnblockProcessCommand(id, request.UserId, request.ResetTime), cancellationToken);
@@ -53,7 +53,7 @@ public class ProcessWorkflowController : ControllerBase
     }
 
     [HttpPost("{id:guid}/restart")]
-    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager,Coordinator")]
     public async Task<IActionResult> RestartProcess(Guid id, [FromBody] RestartProcessRequest request, CancellationToken cancellationToken)
     {
         await _mediator.Send(new RestartProcessCommand(id, request.ResetTime), cancellationToken);
@@ -61,7 +61,7 @@ public class ProcessWorkflowController : ControllerBase
     }
 
     [HttpPost("{id:guid}/withdraw")]
-    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager,Coordinator")]
     public async Task<IActionResult> WithdrawProcess(Guid id, [FromBody] WithdrawProcessRequest request, CancellationToken cancellationToken)
     {
         await _mediator.Send(new WithdrawProcessCommand(id, request.UserId, request.Reason), cancellationToken);

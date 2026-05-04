@@ -79,7 +79,7 @@ public class ChangeRequestsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager,SalesManager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager,SalesManager")]
     public async Task<IActionResult> CreateChangeRequest([FromBody] CreateChangeRequestRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -89,7 +89,7 @@ public class ChangeRequestsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/approve")]
-    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager,Coordinator")]
     public async Task<IActionResult> ApproveChangeRequest(Guid id, [FromBody] HandleChangeRequestRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -99,7 +99,7 @@ public class ChangeRequestsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [Authorize(Roles = "Admin,Manager,Coordinator")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager,Coordinator")]
     public async Task<IActionResult> RejectChangeRequest(Guid id, [FromBody] HandleChangeRequestRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(

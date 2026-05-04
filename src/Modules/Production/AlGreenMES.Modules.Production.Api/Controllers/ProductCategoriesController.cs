@@ -66,7 +66,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> CreateProductCategory([FromBody] CreateProductCategoryRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -80,7 +80,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> UpdateProductCategory(Guid id, [FromBody] UpdateProductCategoryRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -94,7 +94,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<IActionResult> DeleteProductCategory(Guid id, [FromQuery] bool forceDeactivate = false, [FromQuery] bool forceDelete = false, CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new DeleteProductCategoryCommand(id, forceDeactivate, forceDelete), cancellationToken);
@@ -104,7 +104,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPost("{id:guid}/activate")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<IActionResult> ActivateProductCategory(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new ActivateProductCategoryCommand(id), cancellationToken);
@@ -112,7 +112,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPost("{categoryId:guid}/processes")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> AddCategoryProcess(Guid categoryId, [FromBody] AddCategoryProcessRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -122,7 +122,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpDelete("{categoryId:guid}/processes/{processId:guid}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> RemoveCategoryProcess(Guid categoryId, Guid processId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -132,7 +132,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPost("{categoryId:guid}/dependencies")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> AddCategoryDependency(Guid categoryId, [FromBody] AddCategoryDependencyRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -142,7 +142,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpDelete("{categoryId:guid}/dependencies/{dependencyId:guid}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> RemoveCategoryDependency(Guid categoryId, Guid dependencyId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(

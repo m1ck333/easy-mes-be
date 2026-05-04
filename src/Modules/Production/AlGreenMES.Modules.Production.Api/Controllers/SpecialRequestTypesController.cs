@@ -53,7 +53,7 @@ public class SpecialRequestTypesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> CreateSpecialRequestType([FromBody] CreateSpecialRequestTypeRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -65,7 +65,7 @@ public class SpecialRequestTypesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public async Task<IActionResult> UpdateSpecialRequestType(Guid id, [FromBody] UpdateSpecialRequestTypeRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
@@ -77,7 +77,7 @@ public class SpecialRequestTypesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<IActionResult> DeactivateSpecialRequestType(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeactivateSpecialRequestTypeCommand(id), cancellationToken);
@@ -85,7 +85,7 @@ public class SpecialRequestTypesController : ControllerBase
     }
 
     [HttpPost("{id:guid}/activate")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public async Task<IActionResult> ActivateSpecialRequestType(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new ActivateSpecialRequestTypeCommand(id), cancellationToken);
