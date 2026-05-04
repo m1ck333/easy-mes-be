@@ -81,7 +81,8 @@ public class Program
                 policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "SuperAdmin"));
         });
 
-        // Tenant service
+        // Current user / tenant resolution from JWT
+        builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
         builder.Services.AddScoped<ITenantService, TenantService>();
 
         // SignalR event service

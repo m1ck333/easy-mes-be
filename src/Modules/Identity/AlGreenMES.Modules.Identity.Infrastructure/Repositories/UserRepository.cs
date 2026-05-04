@@ -31,16 +31,20 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email, Guid tenantId, CancellationToken cancellationToken = default)
     {
+        // Login runs unauthenticated (no JWT yet) — bypass HasQueryFilter and rely on the explicit tenantId.
         var normalizedEmail = email.Trim().ToLowerInvariant();
         return await _dbContext.Users
+            .IgnoreQueryFilters()
             .Include(u => u.UserProcesses)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.TenantId == tenantId, cancellationToken);
     }
 
     public async Task<User?> GetByEmailWithProcessesAsync(string email, Guid tenantId, CancellationToken cancellationToken = default)
     {
+        // Login runs unauthenticated (no JWT yet) — bypass HasQueryFilter and rely on the explicit tenantId.
         var normalizedEmail = email.Trim().ToLowerInvariant();
         return await _dbContext.Users
+            .IgnoreQueryFilters()
             .Include(u => u.UserProcesses)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.TenantId == tenantId, cancellationToken);
     }

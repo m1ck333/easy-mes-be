@@ -58,7 +58,9 @@ public class OrdersCrossTenantTests : IntegrationTestBase
 
         using var scope = Factory.Services.CreateScope();
         var ordersDb = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
-        var order = await ordersDb.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderInB);
+        // Test verification runs outside an HTTP context; bypass the new tenant query filter.
+        var order = await ordersDb.Orders.IgnoreQueryFilters().AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == orderInB);
         order.Should().NotBeNull("tenant B's order must still exist");
         order!.Status.Should().NotBe(OrderStatus.Cancelled,
             "tenant A's cancel attempt must not have mutated tenant B's order");
