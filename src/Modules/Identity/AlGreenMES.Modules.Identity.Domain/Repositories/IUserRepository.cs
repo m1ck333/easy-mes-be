@@ -7,6 +7,8 @@ public interface IUserRepository
 {
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<User?> GetByIdWithProcessesAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <summary>For pre-auth flows (refresh) where the JWT and tenant scope are not yet established.</summary>
+    Task<User?> GetByIdIgnoreFiltersAsync(Guid id, CancellationToken cancellationToken = default);
     Task<User?> GetByEmailAsync(string email, Guid tenantId, CancellationToken cancellationToken = default);
     Task<User?> GetByEmailWithProcessesAsync(string email, Guid tenantId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<User>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);

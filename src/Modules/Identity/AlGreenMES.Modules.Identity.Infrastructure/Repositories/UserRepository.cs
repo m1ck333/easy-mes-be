@@ -29,6 +29,14 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
+    public async Task<User?> GetByIdIgnoreFiltersAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        // Refresh flow runs unauthenticated — bypass HasQueryFilter, caller validates tenant explicitly.
+        return await _dbContext.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
     public async Task<User?> GetByEmailAsync(string email, Guid tenantId, CancellationToken cancellationToken = default)
     {
         // Login runs unauthenticated (no JWT yet) — bypass HasQueryFilter and rely on the explicit tenantId.
