@@ -75,7 +75,11 @@ public class Program
             };
         });
 
-        builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("RequireSuperAdmin", policy =>
+                policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "SuperAdmin"));
+        });
 
         // Tenant service
         builder.Services.AddScoped<ITenantService, TenantService>();
