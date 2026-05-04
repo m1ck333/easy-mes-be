@@ -80,6 +80,24 @@ public static class TestDataSeeder
         return (a, b);
     }
 
+    public static async Task<Guid> SeedAdditionalUserAsync(
+        AlgreenWebApplicationFactory factory,
+        Guid tenantId,
+        UserRole role = UserRole.Admin)
+    {
+        using var scope = factory.Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        var identityDb = sp.GetRequiredService<IdentityDbContext>();
+        var passwordHasher = sp.GetRequiredService<IPasswordHasher>();
+
+        var email = $"u-{Guid.NewGuid():N}".Substring(0, 10) + "@test.local";
+        var user = User.Create(tenantId, email, passwordHasher.HashPassword(DefaultPassword),
+            "Test", "User", role);
+        identityDb.Users.Add(user);
+        await identityDb.SaveChangesAsync();
+        return user.Id;
+    }
+
     public static async Task<Guid> SeedOrderAsync(
         AlgreenWebApplicationFactory factory,
         Guid tenantId,
