@@ -25,10 +25,12 @@ using AlGreenMES.Modules.Orders.Application.Queries.GetOrders;
 using AlGreenMES.Modules.Orders.Application.Queries.GetOrdersMasterView;
 using AlGreenMES.Modules.Orders.Domain.Repositories;
 using AlGreenMES.Modules.Orders.Domain.Enums;
+using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace AlGreenMES.Modules.Orders.Api.Controllers;
 
@@ -40,12 +42,21 @@ public class OrdersController : ControllerBase
     private readonly IMediator _mediator;
     private readonly IOrderAttachmentRepository _attachmentRepository;
     private readonly IFileStorageService _fileStorageService;
+    private readonly ITenantService _tenantService;
+    private readonly ILogger<OrdersController> _logger;
 
-    public OrdersController(IMediator mediator, IOrderAttachmentRepository attachmentRepository, IFileStorageService fileStorageService)
+    public OrdersController(
+        IMediator mediator,
+        IOrderAttachmentRepository attachmentRepository,
+        IFileStorageService fileStorageService,
+        ITenantService tenantService,
+        ILogger<OrdersController> logger)
     {
         _mediator = mediator;
         _attachmentRepository = attachmentRepository;
         _fileStorageService = fileStorageService;
+        _tenantService = tenantService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -284,6 +295,15 @@ public class OrdersController : ControllerBase
         var attachment = await _attachmentRepository.GetByIdAsync(id, cancellationToken);
         if (attachment == null || attachment.OrderId != orderId)
             return NotFound();
+
+        var currentTenantId = _tenantService.GetCurrentTenantId();
+        if (attachment.TenantId != currentTenantId)
+        {
+            _logger.LogWarning(
+                "Cross-tenant attachment access attempt: user tenant {UserTenantId} requested attachment {AttachmentId} from tenant {AttachmentTenantId}",
+                currentTenantId, id, attachment.TenantId);
+            return NotFound();
+        }
 
         var stream = await _fileStorageService.GetFileAsync(attachment.StoragePath, cancellationToken);
         if (stream == null)
