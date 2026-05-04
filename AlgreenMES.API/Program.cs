@@ -99,14 +99,29 @@ public class Program
         builder.Services.AddScoped<IMapper, ServiceMapper>();
 
         // CORS
+        const string CorsPolicyName = "AlgreenMesCors";
+
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        if (allowedOrigins.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "CORS configuration error: Cors:AllowedOrigins is empty. " +
+                "Add at least one allowed origin to appsettings.");
+        }
+
         builder.Services.AddCors(options =>
         {
-            options.AddDefaultPolicy(policy =>
+            options.AddPolicy(CorsPolicyName, policy =>
             {
-                policy.SetIsOriginAllowed(_ => true)
-                    .AllowAnyMethod()
+                policy
+                    .WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
-                    .AllowCredentials();
+                    .AllowAnyMethod()
+                    .AllowCredentials()
+                    .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
             });
         });
 
@@ -121,7 +136,7 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-        app.UseCors();
+        app.UseCors(CorsPolicyName);
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
