@@ -16,6 +16,9 @@ public class CurrentUserService : ICurrentUserService
     public bool IsAuthenticated =>
         _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 
+    public bool IsInRole(string role) =>
+        _httpContextAccessor.HttpContext?.User?.IsInRole(role) ?? false;
+
     public Guid GetCurrentTenantId()
     {
         var ctx = _httpContextAccessor.HttpContext
