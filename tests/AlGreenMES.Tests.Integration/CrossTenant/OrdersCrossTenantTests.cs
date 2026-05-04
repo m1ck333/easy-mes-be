@@ -1,0 +1,66 @@
+using System.Net;
+using AlGreenMES.Modules.Orders.Domain.Enums;
+using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
+using AlGreenMES.Tests.Integration.Helpers;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace AlGreenMES.Tests.Integration.CrossTenant;
+
+public class OrdersCrossTenantTests : IntegrationTestBase
+{
+    public OrdersCrossTenantTests(AlgreenWebApplicationFactory factory) : base(factory) { }
+
+    [Fact]
+    public async Task GetOrderById_FromOtherTenant_Returns404()
+    {
+        var (tenantA, tenantB) = await TestDataSeeder.SeedTwoTenantsAsync(Factory);
+        var orderInB = await TestDataSeeder.SeedOrderAsync(Factory, tenantB.TenantId, tenantB.UserId);
+        var clientA = await TestDataSeeder.AuthenticatedClientAsync(Factory, tenantA);
+
+        var response = await clientA.GetAsync($"/api/orders/{orderInB}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound,
+            "tenant A must not be able to see tenant B's orders by ID");
+    }
+
+    [Fact]
+    public async Task GetOrders_WithOtherTenantIdInQuery_DoesNotReturnOtherTenantOrders()
+    {
+        var (tenantA, tenantB) = await TestDataSeeder.SeedTwoTenantsAsync(Factory);
+        await TestDataSeeder.SeedOrderAsync(Factory, tenantA.TenantId, tenantA.UserId, orderNumber: "A-MARKER-ORDER");
+        await TestDataSeeder.SeedOrderAsync(Factory, tenantB.TenantId, tenantB.UserId, orderNumber: "B-MARKER-ORDER");
+        var clientA = await TestDataSeeder.AuthenticatedClientAsync(Factory, tenantA);
+
+        // Tenant A user passes tenant B's tenantId in the query string.
+        // A correctly-scoped endpoint must not trust the query param over the JWT claim.
+        var response = await clientA.GetAsync($"/api/orders?tenantId={tenantB.TenantId}");
+        response.EnsureSuccessStatusCode();
+
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().NotContain("B-MARKER-ORDER",
+            "tenant A must not see tenant B's orders by passing tenant B's id as a query param");
+    }
+
+    [Fact]
+    public async Task CancelOrder_FromOtherTenant_Returns404_AndDoesNotMutate()
+    {
+        var (tenantA, tenantB) = await TestDataSeeder.SeedTwoTenantsAsync(Factory);
+        var orderInB = await TestDataSeeder.SeedOrderAsync(Factory, tenantB.TenantId, tenantB.UserId);
+        var clientA = await TestDataSeeder.AuthenticatedClientAsync(Factory, tenantA);
+
+        var response = await clientA.PostAsync($"/api/orders/{orderInB}/cancel", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound,
+            "tenant A must not be able to cancel tenant B's orders");
+
+        using var scope = Factory.Services.CreateScope();
+        var ordersDb = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
+        var order = await ordersDb.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderInB);
+        order.Should().NotBeNull("tenant B's order must still exist");
+        order!.Status.Should().NotBe(OrderStatus.Cancelled,
+            "tenant A's cancel attempt must not have mutated tenant B's order");
+    }
+}

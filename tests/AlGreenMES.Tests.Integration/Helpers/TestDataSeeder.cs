@@ -3,6 +3,11 @@ using System.Net.Http.Json;
 using AlGreenMES.Modules.Identity.Application.Services;
 using AlGreenMES.Modules.Identity.Domain.Entities;
 using AlGreenMES.Modules.Identity.Infrastructure.Persistence;
+using AlGreenMES.Modules.Orders.Domain.Entities;
+using AlGreenMES.Modules.Orders.Domain.Enums;
+using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
+using AlGreenMES.Modules.Production.Domain.Entities;
+using AlGreenMES.Modules.Production.Infrastructure.Persistence;
 using AlGreenMES.Modules.Tenancy.Domain.Entities;
 using AlGreenMES.Modules.Tenancy.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,6 +68,79 @@ public static class TestDataSeeder
         var token = await LoginAndGetTokenAsync(client, t.Email, t.Password, t.TenantCode);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
+    }
+
+    public static async Task<(SeededTenant tenantA, SeededTenant tenantB)> SeedTwoTenantsAsync(
+        AlgreenWebApplicationFactory factory,
+        UserRole roleForA = UserRole.Admin,
+        UserRole roleForB = UserRole.Admin)
+    {
+        var a = await SeedTenantWithUserAsync(factory, roleForA);
+        var b = await SeedTenantWithUserAsync(factory, roleForB);
+        return (a, b);
+    }
+
+    public static async Task<Guid> SeedOrderAsync(
+        AlgreenWebApplicationFactory factory,
+        Guid tenantId,
+        Guid createdByUserId,
+        string? orderNumber = null)
+    {
+        using var scope = factory.Services.CreateScope();
+        var ordersDb = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
+
+        var number = orderNumber ?? $"ORD-{Guid.NewGuid():N}".Substring(0, 16);
+        var order = Order.Create(
+            tenantId,
+            number,
+            DateTime.UtcNow.AddDays(7),
+            priority: 3,
+            OrderType.Standard,
+            createdByUserId,
+            notes: null);
+
+        ordersDb.Orders.Add(order);
+        await ordersDb.SaveChangesAsync();
+        return order.Id;
+    }
+
+    public static async Task<Guid> SeedProcessAsync(
+        AlgreenWebApplicationFactory factory,
+        Guid tenantId,
+        Guid? createdByUserId = null,
+        string? processName = null)
+    {
+        using var scope = factory.Services.CreateScope();
+        var productionDb = scope.ServiceProvider.GetRequiredService<ProductionDbContext>();
+
+        var name = processName ?? $"Proc-{Guid.NewGuid():N}".Substring(0, 12);
+        var code = $"P{Guid.NewGuid():N}".Substring(0, 6).ToUpperInvariant();
+        var process = Process.Create(tenantId, code, name, sequenceOrder: 1, createdByUserId);
+
+        productionDb.Processes.Add(process);
+        await productionDb.SaveChangesAsync();
+        return process.Id;
+    }
+
+    public static async Task<Guid> SeedNotificationAsync(
+        AlgreenWebApplicationFactory factory,
+        Guid tenantId,
+        Guid userId,
+        string? title = null)
+    {
+        using var scope = factory.Services.CreateScope();
+        var ordersDb = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
+
+        var notification = Notification.Create(
+            tenantId,
+            userId,
+            NotificationType.DeadlineWarning,
+            title ?? $"Notif-{Guid.NewGuid():N}".Substring(0, 12),
+            message: "Cross-tenant test notification");
+
+        ordersDb.Notifications.Add(notification);
+        await ordersDb.SaveChangesAsync();
+        return notification.Id;
     }
 
     private sealed record LoginResponse(string Token, string RefreshToken);
