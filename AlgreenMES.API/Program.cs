@@ -156,8 +156,11 @@ public class Program
             await sp.GetRequiredService<OrdersDbContext>().Database.MigrateAsync();
         }
 
-        // Seed demo data (testing phase — runs in all environments)
-        await DataSeeder.SeedAsync(app.Services);
+        // Seed demo data (testing phase — runs in all environments except Test)
+        if (!app.Environment.IsEnvironment("Test"))
+        {
+            await DataSeeder.SeedAsync(app.Services);
+        }
 
         app.Run();
     }
