@@ -23,8 +23,10 @@ public class ProcessesCrossTenantTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetProcesses_WithOtherTenantIdInQuery_DoesNotReturnOtherTenantProcesses()
+    public async Task GetProcesses_DoesNotReturnOtherTenantProcesses()
     {
+        // Sprint 2.4b removed the ?tenantId= query param; the param being gone means
+        // even an attempted ?tenantId=B is silently ignored — tenant scope comes from JWT.
         var (tenantA, tenantB) = await TestDataSeeder.SeedTwoTenantsAsync(Factory);
         await TestDataSeeder.SeedProcessAsync(Factory, tenantA.TenantId, tenantA.UserId, processName: "Proc-A-MARKER");
         await TestDataSeeder.SeedProcessAsync(Factory, tenantB.TenantId, tenantB.UserId, processName: "Proc-B-MARKER");
@@ -35,6 +37,6 @@ public class ProcessesCrossTenantTests : IntegrationTestBase
 
         var body = await response.Content.ReadAsStringAsync();
         body.Should().NotContain("Proc-B-MARKER",
-            "tenant A must not see tenant B's processes by passing tenant B's id as a query param");
+            "tenant A must not see tenant B's processes even if a foreign tenantId is appended to the query");
     }
 }

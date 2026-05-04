@@ -36,7 +36,6 @@ public class ProcessesController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetProcesses(
-        [FromQuery] Guid tenantId,
         [FromQuery] bool? isActive,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -49,7 +48,7 @@ public class ProcessesController : ControllerBase
     {
         var result = await _mediator.Send(new GetProcessesQuery
         {
-            TenantId = tenantId,
+            TenantId = _tenantService.GetCurrentTenantId(),
             IsActive = isActive,
             Page = page,
             PageSize = pageSize,
@@ -75,7 +74,7 @@ public class ProcessesController : ControllerBase
     {
         var result = await _mediator.Send(
             new CreateProcessCommand(
-                request.TenantId, request.Code, request.Name, request.SequenceOrder, null,
+                _tenantService.GetCurrentTenantId(), request.Code, request.Name, request.SequenceOrder, null,
                 request.SubProcesses?.Select(s => new CreateProcessSubProcessItem(s.Name, s.SequenceOrder)).ToList()),
             cancellationToken);
         await NotifyChangeAsync(cancellationToken);
@@ -172,8 +171,8 @@ public class ProcessesController : ControllerBase
 
     private Task NotifyChangeAsync(CancellationToken cancellationToken)
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
-        if (tenantId == Guid.Empty) return Task.CompletedTask;
-        return _processChangeNotifier.NotifyProcessDefinitionChangedAsync(tenantId, cancellationToken);
+        // ITenantService now throws on missing JWT, so the caller is always authenticated here.
+        return _processChangeNotifier.NotifyProcessDefinitionChangedAsync(
+            _tenantService.GetCurrentTenantId(), cancellationToken);
     }
 }

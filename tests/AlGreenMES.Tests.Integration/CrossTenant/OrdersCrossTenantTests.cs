@@ -27,21 +27,22 @@ public class OrdersCrossTenantTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetOrders_WithOtherTenantIdInQuery_DoesNotReturnOtherTenantOrders()
+    public async Task GetOrders_DoesNotReturnOtherTenantOrders()
     {
+        // Sprint 2.4b removed the ?tenantId= query param; tenant comes from JWT.
+        // Even if a stray ?tenantId=B is appended, the server ignores it (param is gone),
+        // so the asserted invariant is unchanged: list only returns the JWT tenant's orders.
         var (tenantA, tenantB) = await TestDataSeeder.SeedTwoTenantsAsync(Factory);
         await TestDataSeeder.SeedOrderAsync(Factory, tenantA.TenantId, tenantA.UserId, orderNumber: "A-MARKER-ORDER");
         await TestDataSeeder.SeedOrderAsync(Factory, tenantB.TenantId, tenantB.UserId, orderNumber: "B-MARKER-ORDER");
         var clientA = await TestDataSeeder.AuthenticatedClientAsync(Factory, tenantA);
 
-        // Tenant A user passes tenant B's tenantId in the query string.
-        // A correctly-scoped endpoint must not trust the query param over the JWT claim.
         var response = await clientA.GetAsync($"/api/orders?tenantId={tenantB.TenantId}");
         response.EnsureSuccessStatusCode();
 
         var body = await response.Content.ReadAsStringAsync();
         body.Should().NotContain("B-MARKER-ORDER",
-            "tenant A must not see tenant B's orders by passing tenant B's id as a query param");
+            "tenant A must not see tenant B's orders even if a foreign tenantId is appended to the query");
     }
 
     [Fact]

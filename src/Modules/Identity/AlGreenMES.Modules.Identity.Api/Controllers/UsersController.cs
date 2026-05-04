@@ -7,6 +7,7 @@ using AlGreenMES.Modules.Identity.Application.Commands.UpdateUser;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUserById;
 using AlGreenMES.Modules.Identity.Application.Queries.GetUsers;
 using AlGreenMES.Modules.Identity.Domain.Entities;
+using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using MediatR;
@@ -21,16 +22,17 @@ namespace AlGreenMES.Modules.Identity.Api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITenantService _tenantService;
 
-    public UsersController(IMediator mediator)
+    public UsersController(IMediator mediator, ITenantService tenantService)
     {
         _mediator = mediator;
+        _tenantService = tenantService;
     }
 
     [HttpGet]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> GetUsers(
-        [FromQuery] Guid tenantId,
         [FromQuery] UserRole? role,
         [FromQuery] bool? isActive,
         [FromQuery] int page = 1,
@@ -44,7 +46,7 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(new GetUsersQuery
         {
-            TenantId = tenantId,
+            TenantId = _tenantService.GetCurrentTenantId(),
             Role = role,
             IsActive = isActive,
             Page = page,
@@ -71,7 +73,7 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(
             new CreateUserCommand(
-                request.TenantId,
+                _tenantService.GetCurrentTenantId(),
                 request.Email,
                 request.Password,
                 request.FirstName,
@@ -88,7 +90,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new UpdateUserCommand(id, request.TenantId, request.FirstName, request.LastName, request.Role, request.IsActive, request.CanIncludeWithdrawnInAnalysis, request.ProcessIds),
+            new UpdateUserCommand(id, _tenantService.GetCurrentTenantId(), request.FirstName, request.LastName, request.Role, request.IsActive, request.CanIncludeWithdrawnInAnalysis, request.ProcessIds),
             cancellationToken);
 
         return Ok(result);

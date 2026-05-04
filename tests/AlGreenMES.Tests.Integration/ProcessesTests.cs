@@ -15,7 +15,7 @@ public class ProcessesTests : IntegrationTestBase
         var t = await TestDataSeeder.SeedTenantWithUserAsync(Factory);
         var client = await TestDataSeeder.AuthenticatedClientAsync(Factory, t);
 
-        var resp = await client.GetAsync($"/api/processes?tenantId={t.TenantId}");
+        var resp = await client.GetAsync("/api/processes");
 
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await resp.Content.ReadAsStringAsync();

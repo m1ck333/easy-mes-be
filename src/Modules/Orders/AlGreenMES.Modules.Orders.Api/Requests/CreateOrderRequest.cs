@@ -14,7 +14,6 @@ public class CreateOrderAddItemInput
 
 public class CreateOrderRequest
 {
-    public Guid TenantId { get; set; }
     public string OrderNumber { get; set; } = string.Empty;
     public DateTime DeliveryDate { get; set; }
     public int Priority { get; set; }

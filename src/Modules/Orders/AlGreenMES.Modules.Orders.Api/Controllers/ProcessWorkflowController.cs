@@ -9,6 +9,7 @@ using AlGreenMES.Modules.Orders.Application.Commands.StopProcessWork;
 using AlGreenMES.Modules.Orders.Application.Commands.RestartProcess;
 using AlGreenMES.Modules.Orders.Application.Commands.UnblockProcess;
 using AlGreenMES.Modules.Orders.Application.Commands.WithdrawProcess;
+using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,10 +22,12 @@ namespace AlGreenMES.Modules.Orders.Api.Controllers;
 public class ProcessWorkflowController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITenantService _tenantService;
 
-    public ProcessWorkflowController(IMediator mediator)
+    public ProcessWorkflowController(IMediator mediator, ITenantService tenantService)
     {
         _mediator = mediator;
+        _tenantService = tenantService;
     }
 
     [HttpPost("{id:guid}/block")]
@@ -89,14 +92,14 @@ public class ProcessWorkflowController : ControllerBase
     [HttpPost("pause-station")]
     public async Task<IActionResult> PauseStation([FromBody] StationRequest request, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new PauseStationCommand(request.ProcessId, request.TenantId, request.UserId), cancellationToken);
+        await _mediator.Send(new PauseStationCommand(request.ProcessId, _tenantService.GetCurrentTenantId(), request.UserId), cancellationToken);
         return NoContent();
     }
 
     [HttpPost("resume-station")]
     public async Task<IActionResult> ResumeStation([FromBody] StationRequest request, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new ResumeStationCommand(request.ProcessId, request.TenantId, request.UserId), cancellationToken);
+        await _mediator.Send(new ResumeStationCommand(request.ProcessId, _tenantService.GetCurrentTenantId(), request.UserId), cancellationToken);
         return NoContent();
     }
 }

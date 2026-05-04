@@ -61,7 +61,6 @@ public class OrdersController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetOrders(
-        [FromQuery] Guid tenantId,
         [FromQuery] OrderStatus? status,
         [FromQuery] OrderType? orderType,
         [FromQuery] DateTime? dateFrom,
@@ -73,7 +72,7 @@ public class OrdersController : ControllerBase
     {
         var result = await _mediator.Send(new GetOrdersQuery
         {
-            TenantId = tenantId,
+            TenantId = _tenantService.GetCurrentTenantId(),
             Status = status,
             OrderType = orderType,
             DateFrom = dateFrom,
@@ -87,7 +86,6 @@ public class OrdersController : ControllerBase
 
     [HttpGet("master-view")]
     public async Task<IActionResult> GetOrdersMasterView(
-        [FromQuery] Guid tenantId,
         [FromQuery] OrderStatus? status,
         [FromQuery] OrderType? orderType,
         [FromQuery] DateTime? dateFrom,
@@ -101,7 +99,7 @@ public class OrdersController : ControllerBase
     {
         var result = await _mediator.Send(new GetOrdersMasterViewQuery
         {
-            TenantId = tenantId,
+            TenantId = _tenantService.GetCurrentTenantId(),
             Status = status,
             OrderType = orderType,
             DateFrom = dateFrom,
@@ -133,7 +131,7 @@ public class OrdersController : ControllerBase
 
         var result = await _mediator.Send(
             new CreateOrderCommand(
-                request.TenantId, request.OrderNumber, request.DeliveryDate, request.Priority, request.OrderType, userId, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
+                _tenantService.GetCurrentTenantId(), request.OrderNumber, request.DeliveryDate, request.Priority, request.OrderType, userId, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
                 request.Items?.Select(i => new Application.Commands.CreateOrder.CreateOrderItemInput(i.ProductCategoryId, i.ProductName, i.Quantity, i.Notes,
                     i.Attachments?.Select(f => new Application.Commands.CreateOrder.CreateOrderAttachmentInput(f.FileName, f.ContentType, f.Length, f.OpenReadStream())).ToList())).ToList(),
                 request.Attachments?.Select(f => new Application.Commands.CreateOrder.CreateOrderAttachmentInput(f.FileName, f.ContentType, f.Length, f.OpenReadStream())).ToList()),
@@ -268,14 +266,14 @@ public class OrdersController : ControllerBase
     [HttpPost("{orderId:guid}/attachments")]
     [Authorize(Roles = "Admin,Manager,SalesManager")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> UploadAttachment(Guid orderId, IFormFile file, [FromQuery] Guid tenantId, [FromQuery] Guid? orderItemId, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadAttachment(Guid orderId, IFormFile file, [FromQuery] Guid? orderItemId, CancellationToken cancellationToken)
     {
         var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
             ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new UnauthorizedAccessException("User ID claim not found in token."));
 
         var result = await _mediator.Send(new UploadOrderAttachmentCommand(
-            orderId, tenantId, userId,
+            orderId, _tenantService.GetCurrentTenantId(), userId,
             file.FileName, file.ContentType, file.Length, file.OpenReadStream(),
             orderItemId),
             cancellationToken);

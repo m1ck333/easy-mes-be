@@ -10,6 +10,7 @@ using AlGreenMES.Modules.Production.Application.Commands.RemoveCategoryProcess;
 using AlGreenMES.Modules.Production.Application.Commands.UpdateProductCategory;
 using AlGreenMES.Modules.Production.Application.Queries.GetProductCategories;
 using AlGreenMES.Modules.Production.Application.Queries.GetProductCategoryById;
+using AlGreenMES.BuildingBlocks.Common.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,15 +23,16 @@ namespace AlGreenMES.Modules.Production.Api.Controllers;
 public class ProductCategoriesController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITenantService _tenantService;
 
-    public ProductCategoriesController(IMediator mediator)
+    public ProductCategoriesController(IMediator mediator, ITenantService tenantService)
     {
         _mediator = mediator;
+        _tenantService = tenantService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetProductCategories(
-        [FromQuery] Guid tenantId,
         [FromQuery] bool? isActive,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -43,7 +45,7 @@ public class ProductCategoriesController : ControllerBase
     {
         var result = await _mediator.Send(new GetProductCategoriesQuery
         {
-            TenantId = tenantId,
+            TenantId = _tenantService.GetCurrentTenantId(),
             IsActive = isActive,
             Page = page,
             PageSize = pageSize,
@@ -69,7 +71,7 @@ public class ProductCategoriesController : ControllerBase
     {
         var result = await _mediator.Send(
             new CreateProductCategoryCommand(
-                request.TenantId, request.Name, request.Description, null,
+                _tenantService.GetCurrentTenantId(), request.Name, request.Description, null,
                 request.DefaultWarningDays, request.DefaultCriticalDays,
                 request.Processes?.Select(p => new ProcessInput(p.ProcessId, p.SequenceOrder, p.DefaultComplexity)).ToList(),
                 request.Dependencies?.Select(d => new DependencyInput(d.ProcessId, d.DependsOnProcessId)).ToList()),
