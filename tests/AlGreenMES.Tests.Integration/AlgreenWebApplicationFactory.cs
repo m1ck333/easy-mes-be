@@ -1,14 +1,18 @@
+using System.Text;
 using AlGreenMES.Modules.Identity.Infrastructure.Persistence;
 using AlGreenMES.Modules.Orders.Infrastructure.Persistence;
 using AlGreenMES.Modules.Production.Infrastructure.Persistence;
 using AlGreenMES.Modules.Tenancy.Infrastructure.Persistence;
 using AlgreenMES.API;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -36,6 +40,10 @@ public class AlgreenWebApplicationFactory : WebApplicationFactory<Program>, IAsy
         await base.DisposeAsync();
     }
 
+    private const string TestJwtSecret = "TEST_SECRET_KEY_AT_LEAST_32_CHARACTERS_LONG_FOR_HS256";
+    private const string TestJwtIssuer = "AlGreenMES";
+    private const string TestJwtAudience = "AlGreenMES";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Test");
@@ -46,10 +54,24 @@ public class AlgreenWebApplicationFactory : WebApplicationFactory<Program>, IAsy
             {
                 ["ConnectionStrings:DefaultConnection"] = ConnectionString,
                 ["Cors:AllowedOrigins:0"] = "http://localhost:5173",
-                ["JwtSettings:Secret"] = "TEST_SECRET_KEY_AT_LEAST_32_CHARACTERS_LONG_FOR_HS256",
-                ["JwtSettings:Issuer"] = "AlGreenMES",
-                ["JwtSettings:Audience"] = "AlGreenMES",
+                ["JwtSettings:Secret"] = TestJwtSecret,
+                ["JwtSettings:Issuer"] = TestJwtIssuer,
+                ["JwtSettings:Audience"] = TestJwtAudience,
                 ["JwtSettings:ExpirationMinutes"] = "60"
+            });
+        });
+
+        // AddJwtBearer captures Secret/Issuer/Audience at builder time, before WAF's
+        // in-memory config overrides take effect. PostConfigure pins the validation
+        // params to the same values JwtTokenService signs with at runtime.
+        builder.ConfigureTestServices(services =>
+        {
+            services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.TokenValidationParameters.IssuerSigningKey =
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TestJwtSecret));
+                options.TokenValidationParameters.ValidIssuer = TestJwtIssuer;
+                options.TokenValidationParameters.ValidAudience = TestJwtAudience;
             });
         });
     }
