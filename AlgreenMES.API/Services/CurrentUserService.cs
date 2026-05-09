@@ -21,13 +21,19 @@ public class CurrentUserService : ICurrentUserService
 
     public Guid GetCurrentTenantId()
     {
-        var ctx = _httpContextAccessor.HttpContext
-            ?? throw new UnauthorizedAccessException("No HTTP context — cannot resolve tenant.");
+        // Background services and pre-auth flows have no HTTP context. Returning
+        // Guid.Empty here means EF's HasQueryFilter (Sprint 2.4a) compiles to
+        // `WHERE TenantId == Guid.Empty`, which matches no real rows — a safe
+        // default that fails closed without breaking startup or background work.
+        // Code paths that legitimately need to bypass the filter use
+        // .IgnoreQueryFilters() on the query and pass tenantId explicitly.
+        var ctx = _httpContextAccessor.HttpContext;
+        if (ctx is null) return Guid.Empty;
 
         var claim = ctx.User?.FindFirst("tenant_id")?.Value;
         if (string.IsNullOrEmpty(claim) || !Guid.TryParse(claim, out var tenantId))
         {
-            throw new UnauthorizedAccessException("Missing or invalid tenant_id claim.");
+            return Guid.Empty;
         }
         return tenantId;
     }
