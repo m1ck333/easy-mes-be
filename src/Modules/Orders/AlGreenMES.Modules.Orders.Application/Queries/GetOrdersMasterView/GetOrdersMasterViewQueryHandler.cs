@@ -104,6 +104,47 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             }
         }
 
+        // ProcessReady: per-item check, mirrors FE `getAggregateProcessState` drawer-circles
+        // logic. A process is ready if at least one item has it Pending and that item's
+        // dependencies for it are Completed or Withdrawn. The aggregated ProcessStatuses
+        // can't tell that — one item being mid-pipeline drowns out a sibling that's ready.
+        var hasDependencySystem = processDependencies.Count > 0;
+        var processReady = new Dictionary<string, bool>();
+        foreach (var grp in grouped)
+        {
+            var ready = false;
+            foreach (var p in grp.Where(x => x.Status == ProcessStatus.Pending))
+            {
+                var item = order.Items.FirstOrDefault(i => i.Processes.Any(ip => ip.Id == p.Id));
+                if (item == null) continue;
+
+                var procDeps = categoryDeps.TryGetValue(item.ProductCategoryId, out var icd)
+                    ? icd.Where(d => d.ProcessId == grp.Key).Select(d => d.DependsOnProcessId).ToList()
+                    : new List<Guid>();
+
+                if (procDeps.Count > 0)
+                {
+                    var allSatisfied = procDeps.All(depId =>
+                    {
+                        var depProc = item.Processes.FirstOrDefault(ip => ip.ProcessId == depId);
+                        if (depProc == null) return true; // dep not on this item → effectively withdrawn
+                        return depProc.Status == ProcessStatus.Completed || depProc.IsWithdrawn;
+                    });
+                    if (allSatisfied) { ready = true; break; }
+                }
+                else if (hasDependencySystem)
+                {
+                    // Order uses deps but this process has none → independent, always ready
+                    ready = true;
+                    break;
+                }
+                // else: no dep system at all → cannot determine readiness without process
+                // sequenceOrder lookup; fall through (matches FE drawer-circles which returns
+                // false in this branch too).
+            }
+            processReady[grp.Key.ToString()] = ready;
+        }
+
         var completedProcesses = nonWithdrawn.Count(p => p.Status == ProcessStatus.Completed);
         var totalProcesses = nonWithdrawn.Count;
 
@@ -141,6 +182,7 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             processStatuses,
             processDurations,
             processPaused,
+            processReady,
             processDependencies,
             order.Attachments.Count,
             order.CreatedAt,
