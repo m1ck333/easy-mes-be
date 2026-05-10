@@ -108,10 +108,19 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
         // logic. A process is ready if at least one item has it Pending and that item's
         // dependencies for it are Completed or Withdrawn. The aggregated ProcessStatuses
         // can't tell that — one item being mid-pipeline drowns out a sibling that's ready.
+        // Priority matches drawer: Blocked/InProgress beat Ready, so if any item in the
+        // group is Blocked or actively InProgress we don't surface a ready indicator at
+        // the aggregate level (the user already needs to address that other item first).
         var hasDependencySystem = processDependencies.Count > 0;
         var processReady = new Dictionary<string, bool>();
         foreach (var grp in grouped)
         {
+            // If any item is Blocked or InProgress, suppress aggregate ready indicator.
+            if (grp.Any(p => p.Status == ProcessStatus.Blocked || p.Status == ProcessStatus.InProgress))
+            {
+                processReady[grp.Key.ToString()] = false;
+                continue;
+            }
             var ready = false;
             foreach (var p in grp.Where(x => x.Status == ProcessStatus.Pending))
             {
