@@ -86,20 +86,37 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
                 return saved;
             }));
 
-        // Build process dependencies from all items' categories
+        // Build process dependencies. When the order has manual processes, those
+        // override the category dependencies entirely (manual mode is opt-in via
+        // OrderType.AllowsManualProcesses, and the manual list is per-order).
         var processDependencies = new Dictionary<string, List<string>>();
-        foreach (var item in order.Items)
+        if (order.HasManualProcesses)
         {
-            if (categoryDeps.TryGetValue(item.ProductCategoryId, out var deps))
+            foreach (var dep in order.ManualProcessDependencies)
             {
-                foreach (var dep in deps)
+                var key = dep.ProcessId.ToString();
+                if (!processDependencies.ContainsKey(key))
+                    processDependencies[key] = new List<string>();
+                var depKey = dep.DependsOnProcessId.ToString();
+                if (!processDependencies[key].Contains(depKey))
+                    processDependencies[key].Add(depKey);
+            }
+        }
+        else
+        {
+            foreach (var item in order.Items)
+            {
+                if (categoryDeps.TryGetValue(item.ProductCategoryId, out var deps))
                 {
-                    var key = dep.ProcessId.ToString();
-                    if (!processDependencies.ContainsKey(key))
-                        processDependencies[key] = new List<string>();
-                    var depKey = dep.DependsOnProcessId.ToString();
-                    if (!processDependencies[key].Contains(depKey))
-                        processDependencies[key].Add(depKey);
+                    foreach (var dep in deps)
+                    {
+                        var key = dep.ProcessId.ToString();
+                        if (!processDependencies.ContainsKey(key))
+                            processDependencies[key] = new List<string>();
+                        var depKey = dep.DependsOnProcessId.ToString();
+                        if (!processDependencies[key].Contains(depKey))
+                            processDependencies[key].Add(depKey);
+                    }
                 }
             }
         }

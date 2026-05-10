@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using AlGreenMES.Modules.Orders.Api.Requests;
 using AlGreenMES.Modules.Orders.Application.Commands.ActivateOrder;
 using AlGreenMES.Modules.Orders.Application.Commands.AddOrderItem;
@@ -129,12 +131,21 @@ public class OrdersController : ControllerBase
             ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new UnauthorizedAccessException("User ID claim not found in token."));
 
+        // FE sends ComplexityType as a string ("S"/"L"/"T"); System.Text.Json defaults
+        // to numeric enums, so without the converter deserialization throws and we'd
+        // silently lose the whole manual-processes list.
+        var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        jsonOpts.Converters.Add(new JsonStringEnumConverter());
+        var manualProcesses = ParseJsonList<CreateOrderManualProcessInput>(request.ManualProcessesJson, jsonOpts);
+        var manualDependencies = ParseJsonList<CreateOrderManualDependencyInput>(request.ManualDependenciesJson, jsonOpts);
+
         var result = await _mediator.Send(
             new CreateOrderCommand(
                 _tenantService.GetCurrentTenantId(), request.OrderNumber, request.DeliveryDate, request.Priority, request.OrderType, userId, request.Notes, request.CustomWarningDays, request.CustomCriticalDays,
                 request.Items?.Select(i => new Application.Commands.CreateOrder.CreateOrderItemInput(i.ProductCategoryId, i.ProductName, i.Quantity, i.Notes,
                     i.Attachments?.Select(f => new Application.Commands.CreateOrder.CreateOrderAttachmentInput(f.FileName, f.ContentType, f.Length, f.OpenReadStream())).ToList())).ToList(),
-                request.Attachments?.Select(f => new Application.Commands.CreateOrder.CreateOrderAttachmentInput(f.FileName, f.ContentType, f.Length, f.OpenReadStream())).ToList()),
+                request.Attachments?.Select(f => new Application.Commands.CreateOrder.CreateOrderAttachmentInput(f.FileName, f.ContentType, f.Length, f.OpenReadStream())).ToList(),
+                manualProcesses, manualDependencies),
             cancellationToken);
         return CreatedAtAction(nameof(GetOrderById), new { id = result.Id }, result);
     }
@@ -322,5 +333,13 @@ public class OrdersController : ControllerBase
     {
         await _mediator.Send(new DeleteOrderAttachmentCommand(orderId, id, tenantId), cancellationToken);
         return NoContent();
+    }
+
+    private static List<T>? ParseJsonList<T>(string? json, JsonSerializerOptions opts)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        // Surface parse failures as 400s — silently dropping the list hides real bugs
+        // (we lost a half-day to that with the ComplexityType enum converter).
+        return JsonSerializer.Deserialize<List<T>>(json, opts);
     }
 }

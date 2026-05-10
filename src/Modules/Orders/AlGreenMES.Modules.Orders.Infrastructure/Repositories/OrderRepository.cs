@@ -26,6 +26,8 @@ public class OrderRepository : IOrderRepository
     {
         return await _dbContext.Orders
             .Include(o => o.Items)
+            .Include(o => o.ManualProcesses)
+            .Include(o => o.ManualProcessDependencies)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
@@ -38,6 +40,8 @@ public class OrderRepository : IOrderRepository
                         .ThenInclude(sp => sp.Logs)
             .Include(o => o.Items)
                 .ThenInclude(i => i.SpecialRequests)
+            .Include(o => o.ManualProcesses)
+            .Include(o => o.ManualProcessDependencies)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
@@ -135,6 +139,8 @@ public class OrderRepository : IOrderRepository
                     .ThenInclude(p => p.SubProcesses)
                         .ThenInclude(sp => sp.Logs)
             .Include(o => o.Attachments)
+            .Include(o => o.ManualProcesses)
+            .Include(o => o.ManualProcessDependencies)
             .Where(o => o.TenantId == tenantId);
 
         if (status.HasValue)

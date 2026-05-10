@@ -23,4 +23,11 @@ public class CreateOrderRequest
     public int? CustomCriticalDays { get; set; }
     public List<CreateOrderAddItemInput>? Items { get; set; }
     public List<IFormFile>? Attachments { get; set; }
+
+    // Manual processes — JSON-stringified because the form is multipart/form-data
+    // (file uploads). Format:
+    //   ManualProcessesJson: [{"processId":"...","sequenceOrder":1,"defaultComplexity":"S"}, ...]
+    //   ManualDependenciesJson: [{"processId":"...","dependsOnProcessId":"..."}, ...]
+    public string? ManualProcessesJson { get; set; }
+    public string? ManualDependenciesJson { get; set; }
 }

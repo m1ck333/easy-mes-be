@@ -40,6 +40,7 @@ public static class OrdersInfrastructureServiceRegistration
         services.AddScoped<IOrdersUnitOfWork>(sp => sp.GetRequiredService<OrdersDbContext>());
 
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderTypeRepository, OrderTypeRepository>();
         services.AddScoped<IOrderItemProcessRepository, OrderItemProcessRepository>();
         services.AddScoped<IOrderItemSubProcessRepository, OrderItemSubProcessRepository>();
         services.AddScoped<IWorkSessionRepository, WorkSessionRepository>();
