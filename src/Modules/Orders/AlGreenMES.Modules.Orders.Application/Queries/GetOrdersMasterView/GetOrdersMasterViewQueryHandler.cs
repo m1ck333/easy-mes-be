@@ -22,7 +22,7 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
     public async Task<PagedResult<OrderMasterViewDto>> Handle(GetOrdersMasterViewQuery request, CancellationToken cancellationToken)
     {
         var result = await _orderRepository.GetPagedWithProcessesAsync(
-            request.TenantId, request.Status, request.OrderType,
+            request.TenantId, request.Status, request.OrderType, request.IsInvoiced,
             request.DateFrom, request.DateTo, request.Search,
             request.SortBy, request.IsDescending,
             request.GetPage(), request.GetPageSize(), cancellationToken);

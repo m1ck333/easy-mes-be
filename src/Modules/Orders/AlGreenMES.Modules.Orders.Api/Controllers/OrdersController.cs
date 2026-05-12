@@ -90,6 +90,7 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> GetOrdersMasterView(
         [FromQuery] OrderStatus? status,
         [FromQuery] OrderType? orderType,
+        [FromQuery] bool? isInvoiced,
         [FromQuery] DateTime? dateFrom,
         [FromQuery] DateTime? dateTo,
         [FromQuery] int page = 1,
@@ -104,6 +105,7 @@ public class OrdersController : ControllerBase
             TenantId = _tenantService.GetCurrentTenantId(),
             Status = status,
             OrderType = orderType,
+            IsInvoiced = isInvoiced,
             DateFrom = dateFrom,
             DateTo = dateTo,
             Page = page,

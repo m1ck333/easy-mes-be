@@ -133,7 +133,7 @@ public class OrderRepository : IOrderRepository
         return await query.ToPagedResultAsync(page, pageSize, cancellationToken);
     }
 
-    public async Task<PagedResult<Order>> GetPagedWithProcessesAsync(Guid tenantId, OrderStatus? status, OrderType? orderType, DateTime? dateFrom, DateTime? dateTo, string? search, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Order>> GetPagedWithProcessesAsync(Guid tenantId, OrderStatus? status, OrderType? orderType, bool? isInvoiced, DateTime? dateFrom, DateTime? dateTo, string? search, string? sortBy, bool isDescending, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Orders
             .Include(o => o.Items)
@@ -150,6 +150,9 @@ public class OrderRepository : IOrderRepository
 
         if (orderType.HasValue)
             query = query.Where(o => o.OrderType == orderType.Value);
+
+        if (isInvoiced.HasValue)
+            query = query.Where(o => o.IsInvoiced == isInvoiced.Value);
 
         if (dateFrom.HasValue)
         {
