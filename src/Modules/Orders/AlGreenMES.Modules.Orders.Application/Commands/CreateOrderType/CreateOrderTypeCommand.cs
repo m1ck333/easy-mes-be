@@ -5,6 +5,6 @@ namespace AlGreenMES.Modules.Orders.Application.Commands.CreateOrderType;
 
 public record CreateOrderTypeCommand(
     Guid TenantId,
-    string Code,
+    string? Code,
     string Name,
     bool AllowsManualProcesses) : IRequest<OrderTypeDto>;
