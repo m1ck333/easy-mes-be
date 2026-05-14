@@ -23,10 +23,17 @@ elif [ "$TARGET" = "staging" ]; then
   REMOTE_PATH=/opt/alblue/api/
   SERVICE=alblue-api
   HOST_VAR=DEPLOY_HOST_STAGING
+elif [ "$TARGET" = "easymes" ]; then
+  # Skyhard / Easy MES side-business droplet. Same code, different target.
+  BRANCH=main
+  REMOTE_PATH=/opt/easy-mes/api/
+  SERVICE=easy-mes-api
+  HOST_VAR=DEPLOY_HOST_EASYMES
 else
-  echo "Usage: ./deploy.sh [staging|pilot]"
+  echo "Usage: ./deploy.sh [staging|pilot|easymes]"
   echo "  staging → branch=staging  → /opt/alblue/api/   + alblue-api"
   echo "  pilot   → branch=master   → /opt/algreen/api/  + algreen-api"
+  echo "  easymes → branch=main     → /opt/easy-mes/api/ + easy-mes-api"
   exit 1
 fi
 
