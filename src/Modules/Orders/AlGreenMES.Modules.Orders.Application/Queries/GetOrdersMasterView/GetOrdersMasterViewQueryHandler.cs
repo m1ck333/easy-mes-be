@@ -121,18 +121,57 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             }
         }
 
-        // ProcessReady: per-item check, mirrors FE `getAggregateProcessState` drawer-circles
-        // logic. A process is ready if at least one item has it Pending and that item's
-        // dependencies for it are Completed or Withdrawn. The aggregated ProcessStatuses
-        // can't tell that — one item being mid-pipeline drowns out a sibling that's ready.
-        // Priority matches drawer: Blocked/InProgress beat Ready, so if any item in the
-        // group is Blocked or actively InProgress we don't surface a ready indicator at
-        // the aggregate level (the user already needs to address that other item first).
-        var hasDependencySystem = processDependencies.Count > 0;
+        // Build a per-item dep lookup. For manual orders the dep graph is at the
+        // order level; for category orders each item's category has its own.
+        // (Was: always used categoryDeps — wrong for manual orders, which made
+        // manual processes look ready/not-ready based on the wrong rules.)
+        var manualDepsByProcess = order.HasManualProcesses
+            ? order.ManualProcessDependencies
+                .GroupBy(d => d.ProcessId)
+                .ToDictionary(g => g.Key, g => g.Select(d => d.DependsOnProcessId).ToList())
+            : null;
+
+        List<Guid> GetItemProcDeps(OrderItem item, Guid processId)
+        {
+            if (manualDepsByProcess is not null)
+                return manualDepsByProcess.GetValueOrDefault(processId) ?? new List<Guid>();
+            return categoryDeps.TryGetValue(item.ProductCategoryId, out var icd)
+                ? icd.Where(d => d.ProcessId == processId).Select(d => d.DependsOnProcessId).ToList()
+                : new List<Guid>();
+        }
+
+        bool IsItemProcessReady(OrderItem item, OrderItemProcess p)
+        {
+            if (p.Status != ProcessStatus.Pending) return false;
+            var deps = GetItemProcDeps(item, p.ProcessId);
+            if (deps.Count == 0) return true; // independent — ready
+            return deps.All(depId =>
+            {
+                var depProc = item.Processes.FirstOrDefault(ip => ip.ProcessId == depId);
+                if (depProc == null) return true; // dep not on this item → effectively withdrawn
+                return depProc.Status == ProcessStatus.Completed || depProc.IsWithdrawn;
+            });
+        }
+
+        // Per-item readiness map: itemProcessReady[itemId][processId] = bool.
+        // The FE per-item ItemProcessBar consumes this directly — it can't compute
+        // it locally because the flat processDependencies map merges deps across
+        // categories and gives the wrong answer for multi-item orders.
+        var itemProcessReady = new Dictionary<string, Dictionary<string, bool>>();
+        foreach (var item in order.Items)
+        {
+            var map = new Dictionary<string, bool>();
+            foreach (var p in item.Processes.Where(p => !p.IsWithdrawn))
+                map[p.ProcessId.ToString()] = IsItemProcessReady(item, p);
+            itemProcessReady[item.Id.ToString()] = map;
+        }
+
+        // Aggregate processReady: a process is ready if at least one item has it
+        // ready. Blocked/InProgress on any item suppresses the aggregate ready
+        // indicator (matches FE drawer-circles priority).
         var processReady = new Dictionary<string, bool>();
         foreach (var grp in grouped)
         {
-            // If any item is Blocked or InProgress, suppress aggregate ready indicator.
             if (grp.Any(p => p.Status == ProcessStatus.Blocked || p.Status == ProcessStatus.InProgress))
             {
                 processReady[grp.Key.ToString()] = false;
@@ -143,30 +182,7 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             {
                 var item = order.Items.FirstOrDefault(i => i.Processes.Any(ip => ip.Id == p.Id));
                 if (item == null) continue;
-
-                var procDeps = categoryDeps.TryGetValue(item.ProductCategoryId, out var icd)
-                    ? icd.Where(d => d.ProcessId == grp.Key).Select(d => d.DependsOnProcessId).ToList()
-                    : new List<Guid>();
-
-                if (procDeps.Count > 0)
-                {
-                    var allSatisfied = procDeps.All(depId =>
-                    {
-                        var depProc = item.Processes.FirstOrDefault(ip => ip.ProcessId == depId);
-                        if (depProc == null) return true; // dep not on this item → effectively withdrawn
-                        return depProc.Status == ProcessStatus.Completed || depProc.IsWithdrawn;
-                    });
-                    if (allSatisfied) { ready = true; break; }
-                }
-                else if (hasDependencySystem)
-                {
-                    // Order uses deps but this process has none → independent, always ready
-                    ready = true;
-                    break;
-                }
-                // else: no dep system at all → cannot determine readiness without process
-                // sequenceOrder lookup; fall through (matches FE drawer-circles which returns
-                // false in this branch too).
+                if (IsItemProcessReady(item, p)) { ready = true; break; }
             }
             processReady[grp.Key.ToString()] = ready;
         }
@@ -209,6 +225,7 @@ public class GetOrdersMasterViewQueryHandler : IRequestHandler<GetOrdersMasterVi
             processDurations,
             processPaused,
             processReady,
+            itemProcessReady,
             processDependencies,
             order.Attachments.Count,
             order.CreatedAt,
