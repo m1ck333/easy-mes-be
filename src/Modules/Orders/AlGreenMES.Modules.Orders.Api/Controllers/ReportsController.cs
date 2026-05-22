@@ -1,6 +1,8 @@
-using AlGreenMES.Modules.Orders.Application.Queries.Reports.GetProcessAverages;
+using AlGreenMES.BuildingBlocks.Common.Interfaces;
+using AlGreenMES.Modules.Orders.Application.Queries.Reports.GetProcessTimes;
 using AlGreenMES.Modules.Orders.Application.Queries.Reports.GetTimeTracking;
 using AlGreenMES.Modules.Orders.Application.Queries.Reports.GetWorkerHours;
+using AlGreenMES.Modules.Orders.Domain.Enums;
 using AlGreenMES.Modules.Production.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -14,46 +16,54 @@ namespace AlGreenMES.Modules.Orders.Api.Controllers;
 public class ReportsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITenantService _tenantService;
 
-    public ReportsController(IMediator mediator)
+    public ReportsController(IMediator mediator, ITenantService tenantService)
     {
         _mediator = mediator;
+        _tenantService = tenantService;
     }
 
-    [HttpGet("process-averages")]
-    public async Task<IActionResult> GetProcessAverages(
-        [FromQuery] Guid tenantId,
+    [HttpGet("process-times")]
+    public async Task<IActionResult> GetProcessTimes(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] List<Guid>? productCategoryIds,
+        [FromQuery] List<OrderType>? orderTypes,
         CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetProcessAveragesQuery(tenantId), cancellationToken);
+        var result = await _mediator.Send(
+            new GetProcessTimesQuery(_tenantService.GetCurrentTenantId(), from, to, productCategoryIds, orderTypes),
+            cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("time-tracking")]
     public async Task<IActionResult> GetTimeTracking(
-        [FromQuery] Guid tenantId,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         [FromQuery] Guid? processId,
         [FromQuery] ComplexityType? complexity,
+        [FromQuery] string? orderNumber,
+        [FromQuery] List<Guid>? productCategoryIds,
+        [FromQuery] List<OrderType>? orderTypes,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new GetTimeTrackingQuery(tenantId, from, to, processId, complexity),
+            new GetTimeTrackingQuery(_tenantService.GetCurrentTenantId(), from, to, processId, complexity, orderNumber, productCategoryIds, orderTypes),
             cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("worker-hours")]
     public async Task<IActionResult> GetWorkerHours(
-        [FromQuery] Guid tenantId,
         [FromQuery] DateOnly from,
         [FromQuery] DateOnly to,
         [FromQuery] Guid? userId,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new GetWorkerHoursQuery(tenantId, from, to, userId),
+            new GetWorkerHoursQuery(_tenantService.GetCurrentTenantId(), from, to, userId),
             cancellationToken);
         return Ok(result);
     }
